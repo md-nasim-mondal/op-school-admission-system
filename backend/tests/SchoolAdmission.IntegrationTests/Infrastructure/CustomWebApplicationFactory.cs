@@ -14,7 +14,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     public static readonly string DefaultTestConnectionString = 
         Environment.GetEnvironmentVariable("TEST_DATABASE_URL")
-        ?? "Host=localhost;Port=5433;Database=school_admission_test_db;Username=postgres;Password=postgres;Include Error Detail=true;";
+        ?? "Host=localhost;Port=5434;Database=school_admission_test_db;Username=postgres;Password=postgres;Maximum Pool Size=50;Include Error Detail=true;";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
