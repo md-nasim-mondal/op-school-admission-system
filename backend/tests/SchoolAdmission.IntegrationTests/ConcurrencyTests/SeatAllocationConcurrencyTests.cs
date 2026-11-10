@@ -156,4 +156,65 @@ public class SeatAllocationConcurrencyTests
         Assert.Equal(1, classCheck.HeldSeats);
         Assert.Equal(0, classCheck.AvailableSeats);
     }
+
+    [Fact]
+    public async Task SameStudent_SimultaneousHoldRequestsAcrossDifferentClasses_ExactlyOneSucceeds()
+    {
+        await _factory.ResetDatabaseAsync();
+
+        // 1. Create two separate classes with ample seats
+        var client = _factory.CreateClient();
+        var resA = await client.PostAsJsonAsync("/classes", new CreateClassRequest("Class Alpha", 10));
+        var resB = await client.PostAsJsonAsync("/classes", new CreateClassRequest("Class Beta", 10));
+
+        var classA = await resA.Content.ReadFromJsonAsync<ClassCreatedResponse>();
+        var classB = await resB.Content.ReadFromJsonAsync<ClassCreatedResponse>();
+        Assert.NotNull(classA);
+        Assert.NotNull(classB);
+
+        var studentId = "20152691234567899";
+
+        // 2. Fire simultaneous hold requests for the SAME student to BOTH classes
+        var trigger = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        HttpStatusCode? codeA = null;
+        HttpStatusCode? codeB = null;
+
+        var taskA = Task.Run(async () =>
+        {
+            var clientA = _factory.CreateClient();
+            using var req = new HttpRequestMessage(HttpMethod.Post, $"/classes/{classA.Id}/holds");
+            req.Headers.Add("X-Student-Id", studentId);
+            await trigger.Task;
+            var res = await clientA.SendAsync(req);
+            codeA = res.StatusCode;
+        });
+
+        var taskB = Task.Run(async () =>
+        {
+            var clientB = _factory.CreateClient();
+            using var req = new HttpRequestMessage(HttpMethod.Post, $"/classes/{classB.Id}/holds");
+            req.Headers.Add("X-Student-Id", studentId);
+            await trigger.Task;
+            var res = await clientB.SendAsync(req);
+            codeB = res.StatusCode;
+        });
+
+        trigger.SetResult(true);
+        await Task.WhenAll(taskA, taskB);
+
+        // Assert: One must be Created (201) and one must be Conflict (409)
+        var codes = new[] { codeA, codeB };
+        Assert.Contains(HttpStatusCode.Created, codes);
+        Assert.Contains(HttpStatusCode.Conflict, codes);
+
+        // Verify in DB that student has EXACTLY 1 active hold
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var now = DateTime.UtcNow;
+        var activeHolds = await db.Holds
+            .Where(h => h.StudentId == studentId && h.Status == HoldStatus.HELD && h.ExpiresAtUtc > now)
+            .ToListAsync();
+
+        Assert.Single(activeHolds);
+    }
 }

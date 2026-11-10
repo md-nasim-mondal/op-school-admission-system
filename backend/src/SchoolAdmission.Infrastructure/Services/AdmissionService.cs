@@ -148,7 +148,13 @@ public class AdmissionService : IAdmissionService
 
         try
         {
-            // 1. Lock class row using SELECT FOR UPDATE
+            // 1. Acquire PostgreSQL transaction-level advisory lock on studentId
+            // This guarantees cross-class concurrency protection for the same student
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT pg_advisory_xact_lock(hashtext({studentId}))",
+                cancellationToken);
+
+            // 2. Lock class row using SELECT FOR UPDATE
             var admissionClass = await _dbContext.Classes
                 .FromSqlInterpolated($"SELECT * FROM \"Classes\" WHERE \"Id\" = {classId} FOR UPDATE")
                 .FirstOrDefaultAsync(cancellationToken);
@@ -160,12 +166,12 @@ public class AdmissionService : IAdmissionService
 
             var now = DateTime.UtcNow;
 
-            // 2. Mark overdue holds for this class as EXPIRED inside this transaction
+            // 3. Mark overdue holds for this class or this student as EXPIRED inside this transaction
             await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE \"Holds\" SET \"Status\" = 'EXPIRED' WHERE \"ClassId\" = {classId} AND \"Status\" = 'HELD' AND \"ExpiresAtUtc\" <= {now}",
+                $"UPDATE \"Holds\" SET \"Status\" = 'EXPIRED' WHERE (\"ClassId\" = {classId} OR \"StudentId\" = {studentId}) AND \"Status\" = 'HELD' AND \"ExpiresAtUtc\" <= {now}",
                 cancellationToken);
 
-            // 3. Validate student does not already have an active hold or confirmed admission
+            // 4. Validate student does not already have an active hold or confirmed admission
             var hasActiveHoldOrConfirmed = await _dbContext.Holds
                 .AnyAsync(h => h.StudentId == studentId &&
                     ((h.Status == HoldStatus.HELD && h.ExpiresAtUtc > now) || h.Status == HoldStatus.CONFIRMED),
