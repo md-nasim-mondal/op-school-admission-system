@@ -37,12 +37,15 @@ In accordance with the evaluation requirements of Onnorokom Projukti Limited, th
 | **Docker Desktop GPG Credential Store Error** | `~/.docker/config.json` contained `"credsStore": "desktop"`, which attempted to launch an interactive GUI PIN entry dialog in a headless terminal. | `docker pull` failed with `gpg: decryption failed: Operation cancelled`. | Inspected `~/.docker/config.json`, removed the desktop credsStore override, and configured standard authentication. |
 | **TypeScript Strict Compilation Errors** | Unused imports and variables (`useEffect`, `CheckCircle`, Lucide props) and missing Vite environment types. | `npm run build` failed during strict `tsc -b` type checking. | Added `"types": ["vite/client"]` to `tsconfig.json` and cleaned up all unused imports across components. |
 | **Host Port 5432 Collision** | Host machine had a preexisting system PostgreSQL service listening on port 5432. | `docker run` failed with `address already in use` when binding `5432:5432`. | Configured `docker-compose.yml` with `${DB_PORT:-5434}:5432` and internal container networking `db:5432`, preventing host port collision while keeping internal communication standard. |
+| **Cross-Class Simultaneous Student Race Condition** | When simultaneous requests for the SAME student targeted DIFFERENT classes, class-level `SELECT FOR UPDATE` locks did not serialize requests across different classes, allowing two holds to be created for one student. | Authoring the cross-class concurrency test `SameStudent_SimultaneousHoldRequestsAcrossDifferentClasses_ExactlyOneSucceeds` revealed `[Created, Created]` instead of `[Created, Conflict]`. | Implemented PostgreSQL transaction-scoped advisory locks on the student ID: `SELECT pg_advisory_xact_lock(hashtext(@studentId))`, guaranteeing cross-class serialization at the database engine level. |
+| **PostgreSQL Connection Pool Burst Exhaustion** | 100 simultaneous concurrent HTTP requests in integration testing exhausted PostgreSQL's default 100-connection client limit. | Concurrency test failed with `Npgsql.PostgresException: 53300: sorry, too many clients already`. | Increased PostgreSQL `max_connections` to 300 in `docker-compose.yml` and configured client pool connection settings in test harness. |
 
 ---
 
 ### 4. Verification & Validation Performed
 Every line of code and test was verified through actual runtime execution:
-- .NET 8 test suite executed: **31 tests passed (19 Unit tests + 12 Integration & Concurrency tests, 0 failed)**.
+- .NET 8 test suite executed: **32 tests passed (19 Unit tests + 13 Integration & Concurrency tests, 0 failed)**.
 - React 19 frontend test suite executed: **6 Vitest tests passed (0 failed)**.
+- Total automated tests: **38 tests passing (100% success rate)**.
 - Frontend production bundle built successfully with Vite in 1.63s.
 - Multi-stage Docker images built and orchestrated via Docker Compose.

@@ -31,16 +31,19 @@ This document details all technical and architectural assumptions made during th
 
 ---
 
-### 4. Database-Level Concurrency Control (`SELECT FOR UPDATE`)
-- **Assumption:** Concurrency protection must be enforced at the database level rather than application memory.
-- **Reasoning:** In-memory C# locks (`lock`, `SemaphoreSlim`) only work within a single process. In real-world deployments (and as specified in the bonus criteria), multiple backend instances or container replicas operate simultaneously against the same PostgreSQL database.
+### 4. Database-Level Concurrency Control (`SELECT FOR UPDATE` & `pg_advisory_xact_lock`)
+- **Assumption:** Concurrency protection must be enforced at the database level rather than application memory, protecting both class-level seat limits and student-level hold uniqueness.
+- **Reasoning:** In-memory C# locks (`lock`, `SemaphoreSlim`) only work within a single process. In real-world deployments (and as specified in the bonus criteria), multiple backend instances or container replicas operate simultaneously against the same PostgreSQL database. Furthermore, if a student concurrently attempts to hold seats in two *different* classes at the exact same millisecond, row locking Class A and Class B independently would not serialize the student check.
 - **Design:** When a seat hold is requested:
   1. A PostgreSQL transaction is opened (`IsolationLevel.ReadCommitted`).
-  2. The target class record is explicitly locked via `SELECT * FROM "Classes" WHERE "Id" = @id FOR UPDATE`.
-  3. Overdue holds for that class are expired.
-  4. Active and confirmed counts are recalculated under the row lock.
-  5. If `heldCount + confirmedCount < totalSeats`, the new hold is inserted and committed.
-  6. Any competing requests for that same class wait until the lock is released, completely preventing any over-allocation.
+  2. A transaction-scoped advisory lock is acquired on the student identifier: `SELECT pg_advisory_xact_lock(hashtext(@studentId))`. This serializes all simultaneous hold attempts by the same student across ANY class.
+  3. The target class record is explicitly locked via `SELECT * FROM "Classes" WHERE "Id" = @id FOR UPDATE`.
+  4. Overdue holds for that class and student are transitioned to `EXPIRED`.
+  5. The student's active hold count is checked. If an active or confirmed hold exists, `409 Conflict` is returned.
+  6. Active and confirmed counts are recalculated under the row lock.
+  7. If `heldCount + confirmedCount < totalSeats`, the new hold is inserted and committed.
+  8. Any competing requests for that same class wait until the lock is released, completely preventing any over-allocation.
+  9. Both locks are automatically released by PostgreSQL upon transaction commit or rollback.
 
 ---
 

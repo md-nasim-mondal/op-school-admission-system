@@ -30,7 +30,9 @@ Each class shift (e.g., *"Class 6 - Morning Shift"* with 120 seats, *"Class 6 - 
   - `SchoolAdmission.Application`: Use cases, DTOs, FluentValidation rules (`CreateClassRequestValidator`, `StudentIdValidator`), service interfaces.
   - `SchoolAdmission.Infrastructure`: Entity Framework Core 8, Npgsql PostgreSQL provider, PostgreSQL row-level locking (`SELECT ... FOR UPDATE`), `HoldExpirationBackgroundService` worker.
   - `SchoolAdmission.Api`: Thin REST controllers, Global Exception Handling Middleware (translating domain errors to appropriate 4xx/5xx responses), OpenAPI/Swagger.
-- **Concurrency Control:** Strict database-level pessimistic row locking (`SELECT FOR UPDATE`) on the class record inside read-committed transactions. This guarantees zero over-allocation even across multiple backend instances or processes sharing the PostgreSQL database.
+- **Concurrency Control:** Multi-tier database-level concurrency protection:
+  - **Class-Level Seat Protection:** Explicit pessimistic row locking (`SELECT ... FOR UPDATE`) on the class record inside read-committed transactions guarantees `HeldSeats + ConfirmedSeats <= TotalSeats` under high simultaneous load.
+  - **Student-Level Cross-Class Protection:** PostgreSQL transaction-scoped advisory locks (`SELECT pg_advisory_xact_lock(hashtext(studentId))`) serialize hold requests for the same student across different classes, preventing race conditions.
 
 ### Frontend
 - **React 19** + **TypeScript** (Strict Mode)
@@ -54,6 +56,7 @@ school-admission-system/
 ├── docker-compose.yml          # Root Docker Compose orchestrating DB, Backend, Frontend
 ├── .env.example                # Example environment configuration
 ├── README.md                   # Complete system and setup documentation
+├── REQUIREMENT_TRACEABILITY.md # 32-item assignment requirement verification matrix
 ├── ASSUMPTIONS.md              # Detailed documentation of all engineering assumptions
 ├── AI_USAGE.md                 # Record of AI tool usage, corrections, and verifications
 │
@@ -67,7 +70,7 @@ school-admission-system/
 │   │   └── SchoolAdmission.Api/             # Controllers, middlewares, Program.cs
 │   └── tests/
 │       ├── SchoolAdmission.UnitTests/        # 19 Unit tests (domain rules, validators)
-│       └── SchoolAdmission.IntegrationTests/ # 12 Integration tests (concurrency, race conditions, workflows)
+│       └── SchoolAdmission.IntegrationTests/ # 13 Integration tests (concurrency, race conditions, workflows)
 │
 └── frontend/
     ├── Dockerfile              # Multi-stage production Dockerfile (Nginx)
