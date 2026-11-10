@@ -15,9 +15,10 @@ public static class DependencyInjection
         this IServiceCollection services, 
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection") 
-            ?? configuration["DATABASE_URL"]
+        // Prioritize DATABASE_URL environment variable over appsettings
+        var connectionString = configuration["DATABASE_URL"]
             ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+            ?? configuration.GetConnectionString("DefaultConnection") 
             ?? "Host=localhost;Port=5432;Database=school_admission_db;Username=postgres;Password=postgres";
 
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -28,7 +29,10 @@ public static class DependencyInjection
         // Admission Settings
         services.Configure<AdmissionSettings>(options =>
         {
-            if (int.TryParse(configuration["HOLD_DURATION_SECONDS"] ?? Environment.GetEnvironmentVariable("HOLD_DURATION_SECONDS"), out var seconds) && seconds > 0)
+            var holdDurationEnv = configuration["HOLD_DURATION_SECONDS"] 
+                ?? Environment.GetEnvironmentVariable("HOLD_DURATION_SECONDS");
+
+            if (int.TryParse(holdDurationEnv, out var seconds) && seconds > 0)
             {
                 options.HoldDurationSeconds = seconds;
             }
