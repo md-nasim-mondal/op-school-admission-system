@@ -1,9 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Users, Shield, CheckCircle, Clock, Search, Info } from 'lucide-react';
 import { ClassDetails } from '../types';
+import { LoadingState } from './LoadingState';
+import { ErrorFallbackCard } from './ErrorFallbackCard';
 
 interface AdminDashboardProps {
   classes: ClassDetails[];
+  isLoading?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
   onOpenCreateModal: () => void;
   onRefresh: () => void;
   isRefreshing: boolean;
@@ -11,6 +16,9 @@ interface AdminDashboardProps {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   classes,
+  isLoading = false,
+  isError = false,
+  errorMessage,
   onOpenCreateModal,
   onRefresh,
   isRefreshing,
@@ -18,14 +26,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedShift, setSelectedShift] = useState<'ALL' | 'MORNING' | 'DAY'>('ALL');
 
-  const totalCapacity = classes.reduce((sum, c) => sum + c.totalSeats, 0);
-  const totalHeld = classes.reduce((sum, c) => sum + c.heldSeats, 0);
-  const totalConfirmed = classes.reduce((sum, c) => sum + c.confirmedSeats, 0);
-  const totalAvailable = classes.reduce((sum, c) => sum + c.availableSeats, 0);
+  const totalCapacity = classes.reduce((sum: number, c: ClassDetails) => sum + c.totalSeats, 0);
+  const totalHeld = classes.reduce((sum: number, c: ClassDetails) => sum + c.heldSeats, 0);
+  const totalConfirmed = classes.reduce((sum: number, c: ClassDetails) => sum + c.confirmedSeats, 0);
+  const totalAvailable = classes.reduce((sum: number, c: ClassDetails) => sum + c.availableSeats, 0);
 
   // Filter classes based on search and shift selection
   const filteredClasses = useMemo(() => {
-    return classes.filter((c) => {
+    return classes.filter((c: ClassDetails) => {
       const matchesSearch =
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -100,8 +108,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
             <span className="text-[11px] sm:text-xs font-semibold text-slate-500 leading-tight">Total Capacity</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-2.5 sm:mt-3">{totalCapacity}</p>
-          <span className="text-xs text-slate-400 mt-0.5 block">{classes.length} classes total</span>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-2.5 sm:mt-3">
+            {isLoading ? '—' : totalCapacity}
+          </p>
+          <span className="text-xs text-slate-400 mt-0.5 block">
+            {isLoading ? 'Loading classes...' : `${classes.length} classes total`}
+          </span>
         </div>
 
         <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-amber-200 shadow-xs min-w-0">
@@ -111,7 +123,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
             <span className="text-[11px] sm:text-xs font-semibold text-amber-700 leading-tight">Active Holds</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-amber-800 mt-2.5 sm:mt-3">{totalHeld}</p>
+          <p className="text-xl sm:text-2xl font-bold text-amber-800 mt-2.5 sm:mt-3">
+            {isLoading ? '—' : totalHeld}
+          </p>
           <span className="text-xs text-amber-600 mt-0.5 block">Occupied under hold</span>
         </div>
 
@@ -122,7 +136,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
             <span className="text-[11px] sm:text-xs font-semibold text-emerald-700 leading-tight">Confirmed Admissions</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-emerald-800 mt-2.5 sm:mt-3">{totalConfirmed}</p>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-800 mt-2.5 sm:mt-3">
+            {isLoading ? '—' : totalConfirmed}
+          </p>
           <span className="text-xs text-emerald-600 mt-0.5 block">Paid &amp; confirmed seats</span>
         </div>
 
@@ -133,7 +149,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
             <span className="text-[11px] sm:text-xs font-semibold text-blue-700 leading-tight">Available Seats</span>
           </div>
-          <p className="text-xl sm:text-2xl font-bold text-blue-800 mt-2.5 sm:mt-3">{totalAvailable}</p>
+          <p className="text-xl sm:text-2xl font-bold text-blue-800 mt-2.5 sm:mt-3">
+            {isLoading ? '—' : totalAvailable}
+          </p>
           <span className="text-xs text-blue-600 mt-0.5 block">Open for applications</span>
         </div>
       </div>
@@ -182,7 +200,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        {classes.length === 0 ? (
+        {isLoading ? (
+          <div className="p-4 sm:p-6">
+            <LoadingState
+              title="Loading class capacities and occupancy metrics..."
+              description="Fetching live admission statistics from the server."
+              accent="indigo"
+              compact
+            />
+          </div>
+        ) : isError ? (
+          <div className="p-4 sm:p-6">
+            <ErrorFallbackCard
+              statusCode="Connection Error"
+              title="Unable to load class capacities"
+              description="We couldn't retrieve class lists or live seat occupancy right now."
+              errorMessage={errorMessage}
+              onRetry={onRefresh}
+              retryLabel="Retry Loading Dashboard"
+            />
+          </div>
+        ) : classes.length === 0 ? (
           <div className="p-8 sm:p-12 text-center text-slate-500 text-sm">
             No classes created yet. Click &quot;Create Class&quot; above to add your first class.
           </div>
@@ -210,7 +248,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {filteredClasses.map((c) => {
+                {filteredClasses.map((c: ClassDetails) => {
                   const percent = c.totalSeats > 0 
                     ? Math.round(((c.heldSeats + c.confirmedSeats) / c.totalSeats) * 100)
                     : 0;

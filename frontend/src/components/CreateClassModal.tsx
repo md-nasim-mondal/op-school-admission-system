@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PlusCircle, X, Loader2, School } from 'lucide-react';
 import { CreateClassInput } from '../types';
+import { getErrorMessage } from '../utils/errors';
 
 interface CreateClassModalProps {
   isOpen: boolean;
@@ -43,8 +44,8 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
       setName('');
       setTotalSeats(60);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to create class.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to create class.'));
     } finally {
       setIsSubmitting(false);
     }

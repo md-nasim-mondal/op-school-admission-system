@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom';
 import { router } from './routes';
 import { StudentProvider } from './context/StudentContext';
 import { ToastProvider } from './context/ToastContext';
+import { GlobalErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,12 +16,14 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <StudentProvider>
-          <RouterProvider router={router} />
-        </StudentProvider>
-      </ToastProvider>
-    </QueryClientProvider>
+    <GlobalErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <StudentProvider>
+            <RouterProvider router={router} />
+          </StudentProvider>
+        </ToastProvider>
+      </QueryClientProvider>
+    </GlobalErrorBoundary>
   );
 }

@@ -54,7 +54,7 @@ export const ApplicationHistory: React.FC<ApplicationHistoryProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
-            {holds.map((hold) => (
+            {holds.map((hold: StudentHold) => (
               <tr
                 key={hold.holdId}
                 className="hover:bg-slate-50/50 transition-colors cursor-pointer"

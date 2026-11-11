@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Users, ArrowRight, Loader2, Search, CheckCircle2, Clock } from 'lucide-react';
 import { ClassDetails, StudentHold } from '../types';
+import { LoadingState } from './LoadingState';
+import { ErrorFallbackCard } from './ErrorFallbackCard';
 
 interface ClassListProps {
   classes: ClassDetails[];
   isLoading: boolean;
+  isError?: boolean;
+  errorMessage?: string;
   studentId: string;
   myHolds: StudentHold[];
   onApply: (classId: string) => Promise<void>;
@@ -17,6 +21,8 @@ interface ClassListProps {
 export const ClassList: React.FC<ClassListProps> = ({
   classes,
   isLoading,
+  isError = false,
+  errorMessage,
   studentId,
   myHolds,
   onApply,
@@ -34,14 +40,14 @@ export const ClassList: React.FC<ClassListProps> = ({
   // Derive active hold and confirmed admission across all classes
   const now = Date.now();
   const activeHold = myHolds.find(
-    (h) => h.status === 'HELD' && new Date(h.expiresAt).getTime() > now
+    (h: StudentHold) => h.status === 'HELD' && new Date(h.expiresAt).getTime() > now
   ) || null;
 
-  const confirmedHold = myHolds.find((h) => h.status === 'CONFIRMED') || null;
+  const confirmedHold = myHolds.find((h: StudentHold) => h.status === 'CONFIRMED') || null;
 
   // Filter classes based on search and shift
   const filteredClasses = useMemo(() => {
-    return classes.filter((c) => {
+    return classes.filter((c: ClassDetails) => {
       const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.id.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -73,17 +79,32 @@ export const ClassList: React.FC<ClassListProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-slate-200 shadow-xs">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-        <p className="text-sm font-medium text-slate-600">Loading available classes and live seat counts...</p>
-      </div>
+      <LoadingState
+        title="Loading available classes and live seat counts..."
+        description="Fetching real-time seat availability across all classes and shifts."
+        accent="blue"
+        showSkeleton
+      />
+    );
+  }
+
+  if (isError) {
+    return (
+      <ErrorFallbackCard
+        statusCode="Connection Error"
+        title="Unable to load classes"
+        description="We couldn't fetch class shifts and live seat availability right now. Check your connection or backend server and try again."
+        errorMessage={errorMessage}
+        onRetry={onRefresh}
+        retryLabel="Retry Loading Classes"
+      />
     );
   }
 
   if (classes.length === 0) {
     return (
       <div className="text-center p-12 bg-white rounded-2xl border border-dashed border-slate-300">
-        <Users className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+        <Users className="w-10 h-10 text-slate-400 mx-auto mb-3" aria-hidden="true" />
         <h3 className="text-base font-semibold text-slate-800">No classes created yet</h3>
         <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
           The school admin has not opened admission for any classes yet. Switch to the Admin portal to create classes.
@@ -159,7 +180,7 @@ export const ClassList: React.FC<ClassListProps> = ({
       ) : (
         /* Grid of Class Cards */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredClasses.map((c) => {
+          {filteredClasses.map((c: ClassDetails) => {
             const isFull = c.availableSeats <= 0;
             const occupancyPercent = c.totalSeats > 0 
               ? Math.round(((c.heldSeats + c.confirmedSeats) / c.totalSeats) * 100) 
@@ -173,7 +194,7 @@ export const ClassList: React.FC<ClassListProps> = ({
             const isHeldThisClass = activeHold?.classId === c.id;
             const isHeldOtherClass = activeHold != null && activeHold.classId !== c.id;
             const hadPreviousExpiredOrCancelled = !activeHold && !confirmedHold && myHolds.some(
-              (h) => h.classId === c.id && (h.status === 'EXPIRED' || h.status === 'CANCELLED')
+              (h: StudentHold) => h.classId === c.id && (h.status === 'EXPIRED' || h.status === 'CANCELLED')
             );
 
             // Determine button presentation and status
@@ -191,7 +212,7 @@ export const ClassList: React.FC<ClassListProps> = ({
             if (isApplyingThis) {
               buttonText = (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                   Holding Seat...
                 </>
               );

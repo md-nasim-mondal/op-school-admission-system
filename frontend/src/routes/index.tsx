@@ -1,24 +1,36 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
 import { StudentPortalPage } from '../pages/StudentPortalPage';
-import { AdminPage } from '../pages/AdminPage';
+import { ErrorPage } from '../pages/ErrorPage';
+import { NotFoundPage } from '../pages/NotFoundPage';
+
+const AdminPage = lazy(() =>
+  import('../pages/AdminPage').then((module) => ({ default: module.AdminPage }))
+);
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <MainLayout />,
+    errorElement: <ErrorPage standalone />,
     children: [
       {
-        index: true,
-        element: <StudentPortalPage />,
-      },
-      {
-        path: 'admin',
-        element: <AdminPage />,
-      },
-      {
-        path: '*',
-        element: <Navigate to="/" replace />,
+        errorElement: <ErrorPage />,
+        children: [
+          {
+            index: true,
+            element: <StudentPortalPage />,
+          },
+          {
+            path: 'admin',
+            element: <AdminPage />,
+          },
+          {
+            path: '*',
+            element: <NotFoundPage />,
+          },
+        ],
       },
     ],
   },
