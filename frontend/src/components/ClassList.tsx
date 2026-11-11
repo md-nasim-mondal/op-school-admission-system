@@ -198,11 +198,12 @@ export const ClassList: React.FC<ClassListProps> = ({
               buttonDisabled = true;
               buttonClasses = 'bg-blue-600 text-white opacity-70 cursor-wait';
             } else if (!isValidBRN) {
-              buttonText = 'Identify to Apply';
+              buttonText = 'Enter BRN Above to Apply';
               buttonDisabled = false;
               buttonClasses = 'bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer border border-slate-200';
-              buttonTitle = 'Please enter your 17-digit Birth Registration Number to apply';
+              buttonTitle = 'Please enter the 17-digit Birth Registration Number in the header above to apply';
               onButtonClick = () => {
+                document.getElementById('top-brn-input')?.focus();
                 if (onPromptIdentification) {
                   onPromptIdentification();
                 } else {

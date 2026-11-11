@@ -41,9 +41,9 @@ const defaultProps = {
 };
 
 describe('ClassList Action States', () => {
-  it('renders "Identify to Apply" when student is not identified', () => {
+  it('renders "Enter BRN Above to Apply" when student is not identified', () => {
     render(<ClassList {...defaultProps} studentId="" />);
-    const buttons = screen.getAllByRole('button', { name: /Identify to Apply/i });
+    const buttons = screen.getAllByRole('button', { name: /Enter BRN Above to Apply/i });
     expect(buttons.length).toBeGreaterThan(0);
   });
 

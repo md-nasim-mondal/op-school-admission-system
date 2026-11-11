@@ -1,14 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-export const DEMO_STUDENT_A = '20152691234567890';
-export const DEMO_STUDENT_B = '20152699876543210';
-
 interface StudentContextType {
   studentId: string;
   isValidBRN: boolean;
   isIdentified: boolean;
-  identifyStudent: (id: string) => void;
+  setStudentId: (id: string) => void;
   clearStudent: () => void;
 }
 
@@ -17,6 +14,7 @@ const StudentContext = createContext<StudentContextType | undefined>(undefined);
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
 
+  // Initialize strictly from localStorage; start empty for fresh visitors (no hardcoded identity)
   const [studentId, setStudentIdState] = useState<string>(() => {
     return localStorage.getItem('student_id') || '';
   });
@@ -24,22 +22,25 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const isValidBRN = /^\d{17}$/.test(studentId.trim());
   const isIdentified = isValidBRN && studentId.length === 17;
 
-  const identifyStudent = useCallback((newId: string) => {
+  // Real-time input updater preserving leading zeros and stripping non-digits
+  const setStudentId = useCallback((newId: string) => {
     const sanitized = newId.replace(/\D/g, '').slice(0, 17);
     setStudentIdState(sanitized);
     if (/^\d{17}$/.test(sanitized)) {
       localStorage.setItem('student_id', sanitized);
+    } else {
+      localStorage.removeItem('student_id');
     }
   }, []);
 
+  // Dedicated student switching / reset: clears storage, input, and TanStack query cache
   const clearStudent = useCallback(() => {
     localStorage.removeItem('student_id');
     setStudentIdState('');
-    // Clear all cached queries so previous student data does not leak
     queryClient.clear();
   }, [queryClient]);
 
-  // Keep localStorage synchronized when valid ID is present
+  // Sync state with localStorage when 17-digit ID is valid
   useEffect(() => {
     if (studentId && isValidBRN) {
       localStorage.setItem('student_id', studentId);
@@ -52,7 +53,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         studentId,
         isValidBRN,
         isIdentified,
-        identifyStudent,
+        setStudentId,
         clearStudent,
       }}
     >

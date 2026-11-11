@@ -79,12 +79,14 @@ This document details all technical and architectural assumptions made during th
 
 ---
 
-### 10. Student Identification Workflow, Student Switching & Cache Isolation
-- **Assumption:** No conventional authentication (passwords, JWT, OTP, registration) is required or permitted by the assignment. However, multiple applicants/parents use the same browser/workstation, necessitating a clean identity declaration screen and an explicit "Switch Student" workflow.
-- **Reasoning:** Pre-populating a hardcoded demo BRN on first page load gives the false appearance of an authenticated session and prevents testing multiple independent students.
-- **Design:**
-  1. A fresh visitor sees a dedicated Student Identification Screen where they enter their 17-digit BRN (with quick presets for Demo Student A and Demo Student B).
-  2. Once identified, the navbar displays a compact student badge with a visible "Switch Student" action.
-  3. Clicking "Switch Student" prompts a confirmation dialog, clears `localStorage`, completely purges TanStack Query client cache (`queryClient.clear()`), and resets local React state.
-  4. Server-side database records, active holds, and confirmed admissions belonging to the previous student remain 100% untouched and preserved on PostgreSQL.
-  5. Class action buttons dynamically communicate the precise status: `Apply for Admission`, `Continue Application`, `Admission Confirmed`, `Already Admitted to Another Class`, `Application Already Active`, `No Seats Available`, and `Apply Again` (when eligible after expiration/cancellation).
+### 10. Student Identification Workflow, Top-of-Page BRN Input & Student Switching
+- **Assumption:** No conventional authentication (passwords, JWT, OTP, registration) is required or permitted by the assignment.
+- **Specification Alignment:** Per the exact assignment instruction (*"Login লাগবে না। Page-এর উপরে একটা ঘরে শিক্ষার্থীর জন্ম নিবন্ধন নম্বর লেখা যাবে। UI এটাকেই শিক্ষার্থীর পরিচয় হিসেবে ধরে নেবে। API-তে শিক্ষার্থীর পরিচয় আসবে X-Student-Id header দিয়ে।"*):
+  1. The 17-digit BRN input box is positioned directly and prominently at the top of the page (`#top-brn-input`) in the application header.
+  2. A fresh visitor does NOT receive a hardcoded identity. The input starts blank, and the student or parent enters their 17-digit Birth Registration Number.
+  3. Real-time validation checks for exactly 17 numeric digits (`^\d{17}$`) and preserves leading zeros throughout.
+  4. Once a valid 17-digit BRN is entered, it is immediately recognized as the active student identifier, injected into every API request via the `X-Student-Id` header, and persisted in `localStorage`.
+  5. An explicit "Switch Student" button appears alongside the input. Clicking it prompts a confirmation dialog, clears the student identifier from storage, and purges the TanStack Query client cache (`queryClient.clear()`).
+  6. Database records, active holds, and admissions for the previous student remain intact on PostgreSQL, ensuring clean isolation when switching between applicants.
+  7. Hardcoded demo student preset buttons are omitted from the production interface to maintain pure assignment fidelity.
+  8. Class action buttons dynamically communicate the precise status: `Apply for Admission`, `Continue Application`, `Admission Confirmed`, `Already Admitted to Another Class`, `Application Already Active`, `No Seats Available`, and `Apply Again` (when eligible after expiration/cancellation).

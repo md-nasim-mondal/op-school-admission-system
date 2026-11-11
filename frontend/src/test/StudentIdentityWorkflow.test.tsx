@@ -2,22 +2,25 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StudentProvider, useStudent, DEMO_STUDENT_A, DEMO_STUDENT_B } from '../context/StudentContext';
+import { StudentProvider, useStudent } from '../context/StudentContext';
+
+const TEST_STUDENT_A = '20152691234567890';
+const TEST_STUDENT_B = '20152699876543210';
 
 const TestConsumer: React.FC = () => {
-  const { studentId, isValidBRN, isIdentified, identifyStudent, clearStudent } = useStudent();
+  const { studentId, isValidBRN, isIdentified, setStudentId, clearStudent } = useStudent();
   return (
     <div>
       <span data-testid="student-id">{studentId}</span>
       <span data-testid="is-valid">{isValidBRN ? 'VALID' : 'INVALID'}</span>
       <span data-testid="is-identified">{isIdentified ? 'IDENTIFIED' : 'ANONYMOUS'}</span>
-      <button data-testid="set-student-a" onClick={() => identifyStudent(DEMO_STUDENT_A)}>
+      <button data-testid="set-student-a" onClick={() => setStudentId(TEST_STUDENT_A)}>
         Set Student A
       </button>
-      <button data-testid="set-student-b" onClick={() => identifyStudent(DEMO_STUDENT_B)}>
+      <button data-testid="set-student-b" onClick={() => setStudentId(TEST_STUDENT_B)}>
         Set Student B
       </button>
-      <button data-testid="set-invalid" onClick={() => identifyStudent('12345')}>
+      <button data-testid="set-invalid" onClick={() => setStudentId('12345')}>
         Set Invalid
       </button>
       <button data-testid="clear-student" onClick={clearStudent}>
@@ -35,7 +38,7 @@ describe('StudentIdentityWorkflow and Switching', () => {
     queryClient = new QueryClient();
   });
 
-  it('starts as anonymous when localStorage is empty', () => {
+  it('starts as anonymous with empty string when localStorage is empty', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <StudentProvider>
@@ -62,10 +65,10 @@ describe('StudentIdentityWorkflow and Switching', () => {
       screen.getByTestId('set-student-a').click();
     });
 
-    expect(screen.getByTestId('student-id').textContent).toBe(DEMO_STUDENT_A);
+    expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_A);
     expect(screen.getByTestId('is-valid').textContent).toBe('VALID');
     expect(screen.getByTestId('is-identified').textContent).toBe('IDENTIFIED');
-    expect(localStorage.getItem('student_id')).toBe(DEMO_STUDENT_A);
+    expect(localStorage.getItem('student_id')).toBe(TEST_STUDENT_A);
   });
 
   it('rejects incomplete identifiers under 17 digits from being marked as identified', () => {
@@ -100,8 +103,8 @@ describe('StudentIdentityWorkflow and Switching', () => {
     act(() => {
       screen.getByTestId('set-student-a').click();
     });
-    expect(screen.getByTestId('student-id').textContent).toBe(DEMO_STUDENT_A);
-    expect(localStorage.getItem('student_id')).toBe(DEMO_STUDENT_A);
+    expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_A);
+    expect(localStorage.getItem('student_id')).toBe(TEST_STUDENT_A);
 
     // Clear / Switch
     act(() => {
@@ -115,8 +118,8 @@ describe('StudentIdentityWorkflow and Switching', () => {
     act(() => {
       screen.getByTestId('set-student-b').click();
     });
-    expect(screen.getByTestId('student-id').textContent).toBe(DEMO_STUDENT_B);
+    expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_B);
     expect(screen.getByTestId('is-identified').textContent).toBe('IDENTIFIED');
-    expect(localStorage.getItem('student_id')).toBe(DEMO_STUDENT_B);
+    expect(localStorage.getItem('student_id')).toBe(TEST_STUDENT_B);
   });
 });
