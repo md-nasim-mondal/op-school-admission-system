@@ -62,18 +62,19 @@ To simulate real-world browser usage where multiple applicants or parents use th
 
 ## 4. Complete API Endpoint Verification Against Specification
 
-All 8 REST API endpoints operate strictly per the assignment contracts:
+All 8 mandatory REST API endpoints operate strictly per the assignment specification and match the actual ASP.NET Core controller implementations:
 
-| Endpoint | HTTP Method | Header / Parameters | Description & Expected Response | Live Test Status |
-|---|---|---|---|:---:|
-| `/classes` | `POST` | Body: `{ name, totalSeats }` | Creates class. Returns `201 Created` with `{ id, name, totalSeats }`. | **PASS** |
-| `/classes` | `GET` | — | Returns list of all classes with calculated seat counts (`heldSeats`, `confirmedSeats`, `availableSeats`). | **PASS** |
-| `/classes/{id}` | `GET` | Route: `id` | Returns details for a specific class including current seat availability. | **PASS** |
-| `/classes/{id}/holds` | `POST` | Route: `id`<br>`X-Student-Id` | Creates temporary hold (10 min). Returns `201 Created` with hold details, or `409 Conflict` if full or student has active hold. | **PASS** |
-| `/holds/{id}/confirm` | `POST` | Route: `id`<br>`X-Student-Id` | Confirms hold, finalizes seat. Idempotent (`200 OK`). Validates ownership (`403 Forbidden` if mismatched). | **PASS** |
-| `/holds/{id}/cancel` | `POST` / `DELETE` | Route: `id`<br>`X-Student-Id` | Cancels active hold, releases seat immediately (`204 No Content`). Validates ownership. | **PASS** |
-| `/students/me/hold` | `GET` | `X-Student-Id` | Returns active hold or confirmed admission for the requesting student (`200 OK` or `404 Not Found`). | **PASS** |
-| `/health` | `GET` | — | Liveness & database connectivity check (`200 OK` with database status). | **PASS** |
+| Endpoint | HTTP Method | Header / Route Parameters | Controller Reference | Description & Expected Response | Live Test Status |
+|---|---|---|---|---|:---:|
+| `/classes` | `POST` | Body: `{ name, totalSeats }` | `ClassesController.CreateClass` | Creates a new admission class or shift. Returns `201 Created` with `{ id, name, totalSeats }`. | **PASS** |
+| `/classes` | `GET` | — | `ClassesController.GetAllClasses` | Returns list of all classes with calculated seat counts (`heldSeats`, `confirmedSeats`, `availableSeats`). | **PASS** |
+| `/classes/{classId}` | `GET` | Route: `classId` | `ClassesController.GetClassById` | Returns seat availability metrics for a specific class. Returns `200 OK` or `404 Not Found`. | **PASS** |
+| `/classes/{classId}/holds` | `POST` | Route: `classId`<br>`X-Student-Id` | `ClassesController.CreateHold` | Creates temporary hold (10 min). Returns `201 Created` with hold details, or `409 Conflict` if full or student already holds a seat. | **PASS** |
+| `/holds/{holdId}` | `GET` | Route: `holdId` | `HoldsController.GetHoldById` | Retrieves current status and expiration timestamp for a hold (`200 OK` or `404 Not Found`). | **PASS** |
+| `/holds/{holdId}/confirm` | `POST` | Route: `holdId`<br>`X-Student-Id` | `HoldsController.ConfirmHold` | Confirms hold, finalizes seat admission (simulated payment). Idempotent (`200 OK`). Validates ownership (`403 Forbidden` if mismatched). | **PASS** |
+| `/holds/{holdId}` | `DELETE` | Route: `holdId`<br>`X-Student-Id` | `HoldsController.CancelHold` | Cancels active hold, releases seat immediately (`204 No Content`). Validates ownership (`403 Forbidden` if mismatched). | **PASS** |
+| `/me/holds` | `GET` | `X-Student-Id` | `StudentController.GetMyHolds` | Returns all application records submitted by the student (`200 OK`). | **PASS** |
+| `/health` | `GET` | — | `HealthController.CheckHealth` | Supporting liveness & database connectivity probe (`200 OK` with database status). | **PASS** |
 
 ---
 

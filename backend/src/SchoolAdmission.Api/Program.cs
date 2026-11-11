@@ -29,13 +29,21 @@ builder.Services.AddSwaggerGen(c =>
 // Configure CORS for Frontend
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+        ?? new[]
+        {
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173"
+        };
+
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(_ => true) // Allow frontend on localhost:3000, 5173, etc.
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .WithExposedHeaders("X-Student-Id")
-              .AllowCredentials();
+              .WithExposedHeaders("X-Student-Id");
     });
 });
 
