@@ -155,10 +155,17 @@ describe('StudentIdentityWorkflow and Switching', () => {
     // Click Submit
     fireEvent.click(submitBtn);
 
-    // Now IDENTIFIED and persisted to localStorage!
+    // Now IDENTIFIED, persisted to localStorage, and input field is locked (disabled) until Switch Student!
     expect(screen.getByTestId('is-identified').textContent).toBe('IDENTIFIED');
     expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_A);
     expect(localStorage.getItem('student_id')).toBe(TEST_STUDENT_A);
+    expect(input).toBeDisabled();
+
+    // Clearing / switching re-enables the input field
+    act(() => {
+      screen.getByTestId('clear-student').click();
+    });
+    expect(input).not.toBeDisabled();
   });
 
   it('StudentIdInput Quick Fill Demo ID populates input and enables Submit without auto-saving', () => {

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
   User,
-  CheckCircle2,
   AlertCircle,
   ArrowLeftRight,
   SendHorizontal,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { useStudent } from "../../context/StudentContext";
 import { useToast } from "../../context/ToastContext";
@@ -80,12 +80,12 @@ export const StudentIdInput: React.FC = () => {
     >
       {/* Required Top-of-Page 17-Digit Student BRN Input Box */}
       <div
-        className={`flex items-center gap-2 bg-slate-50 py-1.5 px-2.5 sm:px-3 rounded-xl border transition-all w-full sm:w-auto min-w-0 ${
+        className={`flex items-center gap-2 py-1.5 px-2.5 sm:px-3 rounded-xl border transition-all w-full sm:w-auto min-w-0 ${
           isCommittedAndActive
-            ? "border-emerald-300 ring-2 ring-emerald-500/10"
+            ? "bg-emerald-50/50 border-emerald-300 ring-2 ring-emerald-500/10"
             : inputValue.length > 0
-              ? "border-blue-300 ring-2 ring-blue-500/10"
-              : "border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10"
+              ? "bg-slate-50 border-blue-300 ring-2 ring-blue-500/10"
+              : "bg-slate-50 border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10"
         }`}
       >
         <User
@@ -95,7 +95,11 @@ export const StudentIdInput: React.FC = () => {
         <div className="flex flex-col flex-1 min-w-0">
           <label
             htmlFor="top-brn-input"
-            className="text-[9px] min-[320px]:text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer leading-tight"
+            className={`text-[9px] min-[320px]:text-[10px] font-bold uppercase tracking-wider leading-tight ${
+              isIdentified
+                ? "text-emerald-700 cursor-default"
+                : "text-slate-500 cursor-pointer"
+            }`}
           >
             Student Birth Registration Number (17 Digits)
           </label>
@@ -103,15 +107,25 @@ export const StudentIdInput: React.FC = () => {
             id="top-brn-input"
             type="text"
             inputMode="numeric"
+            enterKeyHint="done"
             maxLength={17}
+            disabled={isIdentified}
             placeholder="e.g. 20152691234567890"
             value={inputValue}
             onChange={(e) => {
               const val = e.target.value.replace(/\D/g, "").slice(0, 17);
               setInputValue(val);
             }}
-            className="bg-transparent text-xs min-[320px]:text-sm font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-hidden w-full sm:w-52 min-w-0"
+            title={
+              isIdentified
+                ? "Identity locked. Click 'Switch Student' to enter a different BRN."
+                : "Enter 17-digit Birth Registration Number"
+            }
+            className="bg-transparent text-xs min-[320px]:text-sm font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-hidden w-full sm:w-52 min-w-0 disabled:text-slate-900 disabled:opacity-100 disabled:cursor-not-allowed"
             autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
           />
         </div>
 
@@ -119,10 +133,10 @@ export const StudentIdInput: React.FC = () => {
         {inputValue.length > 0 &&
           (isCommittedAndActive ? (
             <span
-              title="Active Student ID (Confirmed)"
-              className="shrink-0 flex items-center gap-1 text-emerald-600 text-xs font-semibold"
+              title="Student ID locked (click Switch Student to change)"
+              className="shrink-0 flex items-center gap-1 text-emerald-700 text-xs font-semibold"
             >
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" aria-hidden="true" />
+              <Lock className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
               <span className="hidden md:inline">Active</span>
             </span>
           ) : (
