@@ -107,15 +107,21 @@ school-admission-system/
 
 ---
 
-## 4. Getting Started with Docker
+## 4. Getting Started & Running the Project
 
-### Prerequisites
+You can run the system in two ways:
+1. **Via Docker Compose (Recommended):** Spins up PostgreSQL, Backend API, and Frontend SPA together with a single command.
+2. **Locally for Development (Hybrid / Non-Docker):** Run PostgreSQL via Docker (or local install), and run the .NET 8 backend and Vite frontend directly on your host machine for live debugging and hot-reloading.
+
+---
+
+### 4.1 Running with Docker Compose (Full Stack)
+
+#### Prerequisites
 - Docker (20.10+)
 - Docker Compose (v2+)
 
-### Quick Start
-To build and start all services (PostgreSQL, Backend API, Frontend UI):
-
+#### Start All Services
 ```bash
 docker compose up --build
 ```
@@ -126,7 +132,7 @@ Once started:
 - **Interactive Swagger UI:** Open [http://localhost:8080/swagger](http://localhost:8080/swagger).
 - **Backend Health Check:** Open [http://localhost:8080/health](http://localhost:8080/health).
 
-### Stopping the Application
+#### Stopping the Application
 ```bash
 docker compose down
 ```
@@ -134,17 +140,77 @@ docker compose down
 
 ---
 
+### 4.2 Running Locally for Development (Hybrid / Non-Docker)
+
+#### Prerequisites
+- **.NET 8 SDK** installed (`dotnet --version`)
+- **Node.js 20+** and **npm** installed (`node -v`, `npm -v`)
+- **Docker** (to run the PostgreSQL container, or an existing local PostgreSQL 15+ instance)
+
+#### Step 1: Start PostgreSQL
+If using Docker for just the database, start the container mapped to port `5434` (to prevent any conflict with a default PostgreSQL instance on 5432):
+```bash
+docker compose up -d db
+```
+
+#### Step 2: Configure & Run the Backend API
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. (Optional) Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+3. Run the backend Web API:
+   ```bash
+   dotnet run --project src/SchoolAdmission.Api
+   ```
+   *The backend will automatically apply any pending EF Core database migrations on startup and start listening at [http://localhost:8080](http://localhost:8080).*
+   *Swagger UI will be available at [http://localhost:8080/swagger](http://localhost:8080/swagger).*
+
+#### Step 3: Configure & Run the Frontend
+1. Open a new terminal and navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. (Optional) Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+3. Install dependencies and start the Vite development server:
+   ```bash
+   npm install
+   npm run dev
+   ```
+   *The Vite dev server will start at [http://localhost:5173](http://localhost:5173) with instant hot-module replacement (HMR).*
+
+4. (Alternative: Production Preview) If you wish to test the production build locally without Docker:
+   ```bash
+   npm run build
+   npm run preview -- --port 3000
+   ```
+
+---
+
 ## 5. Environment Variables Reference
 
-| Variable | Default Value | Description |
-|---|---|---|
-| `POSTGRES_USER` | `postgres` | Database superuser |
-| `POSTGRES_PASSWORD` | `postgres` | Database password |
-| `POSTGRES_DB` | `school_admission_db` | Database name |
-| `DB_PORT` | `5434` | Host port mapped to PostgreSQL container (avoids host port 5432 conflicts) |
-| `DATABASE_URL` | `Host=db;Port=5432;...` | PostgreSQL connection string used by backend |
-| `HOLD_DURATION_SECONDS` | `600` | Seat hold duration in seconds (default 10 minutes) |
-| `VITE_API_BASE_URL` | `http://localhost:8080` | Backend API URL used by the React frontend |
+The project includes separate `.env.example` templates for root Docker Compose, backend local development, and frontend local development:
+
+- `/.env.example` — Master configuration for Docker Compose.
+- `/backend/.env.example` — Connection strings and runtime settings for running the backend locally.
+- `/frontend/.env.example` — API base URL for running the frontend Vite dev server locally.
+
+| Variable | Default Value | Scope | Description |
+|---|---|---|---|
+| `POSTGRES_USER` | `postgres` | Docker / DB | Database superuser |
+| `POSTGRES_PASSWORD` | `postgres` | Docker / DB | Database password |
+| `POSTGRES_DB` | `school_admission_db` | Docker / DB | Database name |
+| `DB_PORT` | `5434` | Docker / DB | Host port mapped to PostgreSQL container (avoids host port 5432 conflicts) |
+| `DATABASE_URL` | `Host=db;Port=5432;...` | Backend | PostgreSQL connection string used by backend |
+| `HOLD_DURATION_SECONDS` | `600` | Backend | Seat hold duration in seconds (default 10 minutes) |
+| `ASPNETCORE_URLS` | `http://localhost:8080` | Backend | Port and host binding for ASP.NET Core API |
+| `VITE_API_BASE_URL` | `http://localhost:8080` | Frontend | Backend API URL used by the React frontend |
 
 ---
 

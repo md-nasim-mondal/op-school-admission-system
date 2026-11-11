@@ -6,23 +6,27 @@ In accordance with the evaluation requirements of Onnorokom Projukti Limited, th
 ---
 
 ### 1. AI Tools Utilized
-- **Tool:** Google Antigravity Coding Assistant (Gemini 3.8 Flash)
-- **Role:** Pair-programming copilot for architecture planning, boilerplate scaffolding, domain modeling, integration testing, and documentation authoring.
+- **OpenAI ChatGPT (GPT-4o):** Used in the initial phase for analyzing the Bengali project specification, understanding domain nuances (e.g., Bangladeshi 17-digit Birth Registration Number structure, first-come first-served admission vs lottery dynamics), identifying potential edge cases, and brainstorming concurrency patterns.
+- **Google Antigravity Coding Assistant (Gemini):** Used as the primary pair-programming copilot for architectural scaffolding, backend & frontend implementation, integration testing, Docker orchestration, and documentation formatting.
 
 ---
 
 ### 2. Areas of Assistance
-1. **Requirements Extraction & Audit:**
-   - Parsing the Bengali PDF assignment specification (`Asst_Software_Engineer_Project_Assignment.pdf`) and building a complete traceability matrix for all mandatory business rules, invariants, and API contracts.
-2. **Architecture & Solution Scaffolding:**
+1. **Domain Understanding & Requirement Analysis (ChatGPT):**
+   - Dissecting the original assignment specification (`Asst_Software_Engineer_Project_Assignment.pdf`) to ensure complete comprehension of business rules, state transitions, and edge cases.
+   - Conceptualizing the seat hold lifecycle (10-minute countdown, automatic expiration, idempotent payment confirmation).
+2. **Requirements Extraction & Traceability Matrix (Antigravity):**
+   - Translating business rules into a 32-item traceability matrix and auditing API contracts.
+3. **Architecture & Solution Scaffolding (Antigravity):**
    - Scaffolding the .NET 8 clean modular architecture (`SchoolAdmission.sln` with Domain, Application, Infrastructure, Api, and Test projects).
    - Scaffolding the React 19 + TypeScript + Vite + Tailwind CSS v4 frontend.
-3. **Pessimistic Concurrency Strategy:**
+4. **Pessimistic Concurrency Strategy (Antigravity):**
    - Formulating PostgreSQL row-level locking (`SELECT FOR UPDATE`) within database transactions to ensure `HeldSeats + ConfirmedSeats <= TotalSeats` under high simultaneous traffic.
-4. **Automated Testing Suite:**
+   - Designing transaction-scoped advisory locks (`pg_advisory_xact_lock`) for cross-class same-student race condition prevention.
+5. **Automated Testing Suite (Antigravity):**
    - Authoring unit tests for domain invariants, validation rules, and idempotency.
    - Authoring integration tests including the mandatory 100-request high-concurrency seat allocation test.
-5. **Docker & Container Orchestration:**
+6. **Docker & Container Orchestration (Antigravity):**
    - Multi-stage Dockerfiles for .NET 8 ASP.NET Core API and React/Nginx SPA.
    - Root `docker-compose.yml` with health checks, persistent volumes, and environment wiring.
 
