@@ -13,10 +13,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addToast = useCallback((type: 'success' | 'error' | 'warning', message: string, title?: string) => {
     const id = `${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev, { id, type, message, title }]);
+    // Keep at most 2 concurrent toasts so narrow mobile viewports remain unobstructed
+    setToasts((prev) => [...prev.slice(-1), { id, type, message, title }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 6000);
+    }, 4500);
   }, []);
 
   const dismissToast = useCallback((id: string) => {

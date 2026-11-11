@@ -46,14 +46,14 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ expiresAt, onExp
   const isExpired = remainingSeconds <= 0;
 
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-mono font-medium text-sm transition-colors ${
+    <div className={`inline-flex flex-wrap items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg border font-mono font-medium text-xs sm:text-sm max-w-full transition-colors ${
       isExpired
         ? 'bg-red-50 text-red-700 border-red-200'
         : isCritical
         ? 'bg-amber-50 text-amber-700 border-amber-300 animate-pulse'
         : 'bg-blue-50 text-blue-700 border-blue-200'
     }`}>
-      <Clock className="w-4 h-4" />
+      <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" aria-hidden="true" />
       {isExpired ? (
         <span className="font-semibold">EXPIRED</span>
       ) : (

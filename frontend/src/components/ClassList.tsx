@@ -105,7 +105,7 @@ export const ClassList: React.FC<ClassListProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium bg-slate-100 px-2.5 py-1 rounded-full">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Live 5s Polling
@@ -114,7 +114,7 @@ export const ClassList: React.FC<ClassListProps> = ({
             type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-semibold cursor-pointer"
+            className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-semibold cursor-pointer px-1 py-1"
           >
             {isRefreshing ? 'Refreshing...' : 'Refresh now'}
           </button>
@@ -122,9 +122,9 @@ export const ClassList: React.FC<ClassListProps> = ({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200 shadow-2xs">
+        <div className="relative flex-1 min-w-0">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <input
             type="text"
             placeholder="Search classes or shifts..."
@@ -134,13 +134,13 @@ export const ClassList: React.FC<ClassListProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
           {(['ALL', 'MORNING', 'DAY'] as const).map((shift) => (
             <button
               key={shift}
               type="button"
               onClick={() => setSelectedShift(shift)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+              className={`flex-1 sm:flex-initial px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap text-center ${
                 selectedShift === shift
                   ? 'bg-blue-600 text-white shadow-2xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -267,17 +267,17 @@ export const ClassList: React.FC<ClassListProps> = ({
             return (
               <div
                 key={c.id}
-                className={`rounded-2xl border border-slate-200 p-5 flex flex-col justify-between transition-all bg-white hover:shadow-md ${
+                className={`rounded-2xl border border-slate-200 p-3.5 min-[320px]:p-4 sm:p-5 flex flex-col justify-between transition-all bg-white hover:shadow-md min-w-0 ${
                   isFull ? 'opacity-85' : 'hover:border-blue-300'
                 } ${isConfirmedThisClass ? 'ring-2 ring-emerald-500/20 border-emerald-300' : ''}`}
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-bold text-slate-900 text-base leading-snug">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug min-w-0 break-words">
                       {c.name}
                     </h3>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 ${
+                      className={`px-2 sm:px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold shrink-0 ${
                         isFull
                           ? 'bg-rose-100 text-rose-800 border border-rose-200'
                           : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
@@ -286,10 +286,10 @@ export const ClassList: React.FC<ClassListProps> = ({
                       {isFull ? 'SEATS FULL' : `${c.availableSeats} LEFT`}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {c.id}</p>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5 break-all">ID: {c.id}</p>
 
                   {/* Progress bar */}
-                  <div className="mt-4">
+                  <div className="mt-3.5 sm:mt-4">
                     <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                       <span>Capacity Occupied</span>
                       <span className="font-semibold">{occupancyPercent}%</span>
@@ -309,29 +309,29 @@ export const ClassList: React.FC<ClassListProps> = ({
                   </div>
 
                   {/* Seat breakdown stats */}
-                  <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 text-center">
-                    <div className="p-2 rounded-lg bg-slate-50">
-                      <span className="block text-[11px] font-medium text-slate-500">Total</span>
-                      <span className="text-sm font-bold text-slate-800">{c.totalSeats}</span>
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3.5 sm:mt-4 pt-3 border-t border-slate-100 text-center">
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-slate-50 min-w-0">
+                      <span className="block text-[10px] min-[340px]:text-[11px] font-medium text-slate-500 truncate">Total</span>
+                      <span className="text-xs sm:text-sm font-bold text-slate-800">{c.totalSeats}</span>
                     </div>
-                    <div className="p-2 rounded-lg bg-amber-50 border border-amber-200/60">
-                      <span className="block text-[11px] font-medium text-amber-700">Held</span>
-                      <span className="text-sm font-bold text-amber-800">{c.heldSeats}</span>
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-amber-50 border border-amber-200/60 min-w-0">
+                      <span className="block text-[10px] min-[340px]:text-[11px] font-medium text-amber-700 truncate">Held</span>
+                      <span className="text-xs sm:text-sm font-bold text-amber-800">{c.heldSeats}</span>
                     </div>
-                    <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200/60">
-                      <span className="block text-[11px] font-medium text-emerald-700">Confirmed</span>
-                      <span className="text-sm font-bold text-emerald-800">{c.confirmedSeats}</span>
+                    <div className="p-1.5 sm:p-2 rounded-lg bg-emerald-50 border border-emerald-200/60 min-w-0">
+                      <span className="block text-[10px] min-[340px]:text-[11px] font-medium text-emerald-700 truncate">Confirmed</span>
+                      <span className="text-xs sm:text-sm font-bold text-emerald-800">{c.confirmedSeats}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Action Button */}
-                <div className="mt-5 pt-3 border-t border-slate-100">
+                <div className="mt-4 sm:mt-5 pt-3 border-t border-slate-100">
                   <button
                     type="button"
                     disabled={buttonDisabled}
                     onClick={onButtonClick}
-                    className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${buttonClasses}`}
+                    className={`w-full min-h-[44px] py-2 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 sm:gap-2 text-center leading-snug transition-all ${buttonClasses}`}
                     title={buttonTitle}
                   >
                     {buttonText}

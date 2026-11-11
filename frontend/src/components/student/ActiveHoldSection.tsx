@@ -21,9 +21,9 @@ export const ActiveHoldSection: React.FC<ActiveHoldSectionProps> = ({
 }) => {
   return (
     <section>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-          <UserCheck className="w-5 h-5 text-blue-600" />
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h2 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+          <UserCheck className="w-5 h-5 text-blue-600 shrink-0" aria-hidden="true" />
           My Admission Status
         </h2>
         {isSelected && (
