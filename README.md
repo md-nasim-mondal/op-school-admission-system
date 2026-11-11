@@ -67,8 +67,9 @@ school-admission-system/
 │
 ├── backend/
 │   ├── .env.example                        # Example environment configuration for local .NET dev
+│   ├── .dockerignore                       # Excludes bin/obj/secrets from Docker build context
 │   ├── SchoolAdmission.sln
-│   ├── Dockerfile                          # Multi-stage production Dockerfile (.NET 8)
+│   ├── Dockerfile                          # Cached NuGet restore + multi-stage .NET 8 build
 │   ├── src/
 │   │   ├── SchoolAdmission.Domain/          # Core entities, enums, domain exceptions
 │   │   ├── SchoolAdmission.Application/     # DTOs, interfaces, FluentValidation
@@ -80,8 +81,11 @@ school-admission-system/
 │
 └── frontend/
     ├── .env.example                        # Example Vite API base URL config for local dev
-    ├── Dockerfile                          # Multi-stage production Dockerfile (Nginx)
+    ├── .dockerignore                       # Excludes node_modules/dist from Docker context
+    ├── Dockerfile                          # BuildKit-cached npm ci + Nginx production image
     ├── nginx.conf                          # SPA routing fallback configuration
+    ├── scripts/
+    │   └── ensure-deps.mjs                 # Smart dependency hash check (skips redundant npm install)
     ├── package.json
     ├── vite.config.ts
     └── src/
@@ -180,11 +184,12 @@ docker compose up -d db
    ```bash
    cp .env.example .env
    ```
-3. Install dependencies and start the Vite development server:
+3. Start the Vite development server directly (no repeated manual `npm install` needed — `predev`/`prebuild`/`pretest` automatically verify `package.json` & `package-lock.json` hashes via `scripts/ensure-deps.mjs` and skip installation unless dependencies changed or `node_modules` is missing):
    ```bash
-   npm install
    npm run dev
    ```
+   *(If preferred, you can still run `npm ci` manually the very first time; subsequent runs skip installation automatically.)*
+
    *The Vite dev server will start at [http://localhost:5173](http://localhost:5173) with instant hot-module replacement (HMR).*
 
 4. (Alternative: Production Preview) If you wish to test the production build locally without Docker:
