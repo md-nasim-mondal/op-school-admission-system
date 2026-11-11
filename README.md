@@ -36,7 +36,8 @@ Each class shift (e.g., *"Class 6 - Morning Shift"* with 120 seats, *"Class 6 - 
 
 ### Frontend
 - **React 19** + **TypeScript** (Strict Mode)
-- **Vite** bundler
+- **React Router v7** with modular layout (`MainLayout`), route configuration (`routes/index.tsx`), and standalone page components (`StudentPortalPage`, `AdminPage`)
+- **Vite 6** bundler
 - **Tailwind CSS v4** for clean, responsive UI design
 - **TanStack Query (React Query v5)** for optimistic UI updates, automated background polling (every 5s for real-time seat counts), and cache management
 - **Axios** with request interceptors for the `X-Student-Id` header
@@ -53,16 +54,19 @@ Each class shift (e.g., *"Class 6 - Morning Shift"* with 120 seats, *"Class 6 - 
 
 ```text
 school-admission-system/
-├── docker-compose.yml          # Root Docker Compose orchestrating DB, Backend, Frontend
-├── .env.example                # Example environment configuration
-├── README.md                   # Complete system and setup documentation
-├── REQUIREMENT_TRACEABILITY.md # 32-item assignment requirement verification matrix
-├── ASSUMPTIONS.md              # Detailed documentation of all engineering assumptions
-├── AI_USAGE.md                 # Record of AI tool usage, corrections, and verifications
+├── docker-compose.yml                      # Root Docker Compose orchestrating DB, Backend, Frontend
+├── .env.example                            # Example environment configuration
+├── README.md                               # Complete system and setup documentation
+├── REQUIREMENT_TRACEABILITY.md             # 32-item assignment requirement verification matrix
+├── ASSUMPTIONS.md                          # Detailed documentation of all engineering assumptions
+├── AI_USAGE.md                             # Record of AI tool usage, corrections, and verifications
+├── FINAL_ASSIGNMENT_COMPLIANCE_REPORT.md   # Phase 5 strict compliance audit report
+├── FINAL_RELEASE_READINESS_REPORT.md       # Phase 6 release readiness report
+├── e2e_evidence/                           # 9 Automated CDP headless browser screenshots
 │
 ├── backend/
 │   ├── SchoolAdmission.sln
-│   ├── Dockerfile              # Multi-stage production Dockerfile (.NET 8)
+│   ├── Dockerfile                          # Multi-stage production Dockerfile (.NET 8)
 │   ├── src/
 │   │   ├── SchoolAdmission.Domain/          # Core entities, enums, domain exceptions
 │   │   ├── SchoolAdmission.Application/     # DTOs, interfaces, FluentValidation
@@ -73,17 +77,31 @@ school-admission-system/
 │       └── SchoolAdmission.IntegrationTests/ # 13 Integration tests (concurrency, race conditions, workflows)
 │
 └── frontend/
-    ├── Dockerfile              # Multi-stage production Dockerfile (Nginx)
-    ├── nginx.conf              # SPA routing fallback configuration
+    ├── Dockerfile                          # Multi-stage production Dockerfile (Nginx)
+    ├── nginx.conf                          # SPA routing fallback configuration
     ├── package.json
     ├── vite.config.ts
-    ├── src/
-    │   ├── api/                # API clients for classes and holds
-    │   ├── components/         # Navbar, ClassList, ActiveHoldCard, CountdownTimer, AdminDashboard
-    │   ├── types/              # TypeScript contracts matching backend DTOs
-    │   ├── test/               # Vitest unit tests for components
-    │   ├── App.tsx             # Main application orchestrator
-    │   └── main.tsx
+    └── src/
+        ├── api/                            # API client & endpoint modules (classes.ts, holds.ts, client.ts)
+        ├── components/
+        │   ├── layout/                     # Navbar, Footer, StudentIdInput, SwitchStudentModal
+        │   ├── student/                    # StudentIdentificationCard, ActiveHoldSection, StatusBanner
+        │   ├── ActiveHoldCard.tsx          # Active application card with live countdown & payment trigger
+        │   ├── AdminDashboard.tsx          # Admin capacity management, shift filters, capacity gauges
+        │   ├── ApplicationHistory.tsx      # Student application history table
+        │   ├── Badge.tsx                   # Status badges (HELD, CONFIRMED, EXPIRED, CANCELLED)
+        │   ├── ClassList.tsx               # Class grid with live seat counts and 8 action states
+        │   ├── CountdownTimer.tsx          # Live MM:SS timer with auto-expiration callback
+        │   ├── CreateClassModal.tsx        # Admin class creation modal
+        │   └── Toast.tsx                   # Toast notifications
+        ├── context/                        # StudentContext, ToastContext
+        ├── layouts/                        # MainLayout with header, navigation, and footer
+        ├── pages/                          # StudentPortalPage, AdminPage
+        ├── routes/                         # React Router v7 route definitions
+        ├── test/                           # 17 Vitest unit & integration tests
+        ├── types/                          # TypeScript interfaces matching backend DTOs
+        ├── App.tsx                         # App root with QueryClient and RouterProvider
+        └── main.tsx
 ```
 
 ---
@@ -245,42 +263,76 @@ List all applications submitted by the student.
 
 ## 7. Automated Testing Suite
 
-The repository includes a comprehensive test suite covering Unit tests, Integration tests, and High-Concurrency stress tests.
+The repository includes a comprehensive 49-test automated testing suite covering Unit tests, Integration tests, High-Concurrency stress tests, and UI component tests.
 
 ### Running Backend Tests
 Ensure .NET 8 SDK is installed and PostgreSQL is running (or start the test container):
 
 ```bash
-cd backend
-dotnet test
+# Run all tests (Unit + Integration + Concurrency)
+dotnet test backend/SchoolAdmission.sln
+
+# Or with Release configuration
+dotnet test backend/SchoolAdmission.sln -c Release
 ```
 
-#### Test Breakdown:
-- **Unit Tests (19 tests):**
-  - `ClassEntityTests`: Verifies correct calculation of held, confirmed, and available seats, ensuring expired holds are never counted.
-  - `AdmissionHoldTests`: Verifies ownership checks, expiration checks, cancellation rules, and confirmation idempotency.
-  - `ValidatorTests`: Verifies 17-digit birth registration number string format, leading zeros preservation, and class seat capacity validation.
-- **Integration Tests (12 tests):**
+#### Test Breakdown (32 Tests — 100% Passing):
+- **Unit Tests (19 tests in `SchoolAdmission.UnitTests`):**
+  - `ClassEntityTests`: Verifies correct calculation of held, confirmed, and available seats, ensuring expired holds are never counted and available seats never drop below zero.
+  - `AdmissionHoldTests`: Verifies ownership checks (403 Forbidden), expiration transitions, cancellation rules, and confirmation idempotency.
+  - `ValidatorTests`: Verifies strict 17-digit birth registration number string format (`^\d{17}$`), leading zero preservation, and class seat capacity validation.
+- **Integration Tests (13 tests in `SchoolAdmission.IntegrationTests`):**
   - Full API lifecycle tests (`ClassApiTests`, `HoldAndAdmissionWorkflowTests`).
-  - **Mandatory Concurrency Test (`SeatAllocationConcurrencyTests`):** Fires 100 simultaneous HTTP requests across threads against a class with only 10 seats. Asserts that exactly 10 requests succeed (201 Created), 90 fail (409 Conflict), and the final database state contains exactly 10 held seats and 0 available seats.
-  - **Two-Process Race Condition Test:** 2 independent clients racing for the last 1 available seat. Verifies that exactly 1 wins and the other receives 409 Conflict.
+  - **Mandatory 100-Request Concurrency Stress Test (`SeatAllocationConcurrencyTests.ConcurrentHoldRequests_ShouldNeverOverAllocateSeats`):** Fires 100 simultaneous HTTP requests across threads against a class with only 10 seats. Asserts that exactly 10 requests succeed (201 Created), 90 fail (409 Conflict), and the final database state contains exactly 10 held seats and 0 available seats.
+  - **Two-Process Race Condition Test (`TwoConcurrentClients_RacingForLastSeat_ExactlyOneWins`):** 2 independent clients racing for the last 1 available seat. Verifies that exactly 1 wins and the other receives 409 Conflict.
+  - **Cross-Class Advisory Lock Test (`SameStudent_SimultaneousHoldRequestsAcrossDifferentClasses_ExactlyOneSucceeds`):** When the same student fires simultaneous hold requests across different classes at the exact same millisecond, PostgreSQL transaction advisory locks serialize the requests, allowing exactly 1 hold to be created and returning 409 Conflict for the second.
 
 ### Running Frontend Tests
 ```bash
-cd frontend
-npm test
+# Run Vitest test suite
+npm --prefix frontend test -- --run
+
+# Run production build check
+npm --prefix frontend run build
 ```
-Executes Vitest tests verifying `CountdownTimer` and `Badge` component behaviors.
+
+#### Test Breakdown (17 Tests across 4 suites — 100% Passing):
+- `Badge.test.tsx` (4 tests): Verifies status badge labels and CSS styling for `HELD`, `CONFIRMED`, `EXPIRED`, and `CANCELLED`.
+- `CountdownTimer.test.tsx` (2 tests): Verifies real-time MM:SS countdown formatting and zero-expiration callback invocation.
+- `StudentIdentityWorkflow.test.tsx` (4 tests): Verifies anonymous fresh visitor state, 17-digit BRN validation, leading zero preservation, and student switching with cache purging (`queryClient.clear()`).
+- `ClassActionStates.test.tsx` (7 tests): Verifies all dynamic class button states:
+  - `Enter BRN Above to Apply` (unidentified visitor)
+  - `Apply for Admission` (eligible to apply)
+  - `Holding Seat...` (mutation in progress)
+  - `Continue Application` (already holds seat in this class)
+  - `Admission Confirmed` (confirmed in this class)
+  - `Already Admitted to Another Class` (confirmed in another class)
+  - `Application Already Active` (holds seat in another class)
+  - `No Seats Available` (class is full)
+  - `Apply Again` (eligible to reapply after previous hold expired or cancelled)
 
 ---
 
 ## 8. Verification & Persistence Checklist
 
-- [x] Application compiles cleanly (.NET 8 C# + React 19 TypeScript).
+- [x] Application compiles cleanly (.NET 8 C# in Release mode + React 19 TypeScript).
 - [x] Multi-stage Dockerfiles and root `docker-compose.yml` operational.
 - [x] Database health check and automatic EF Core migration on startup.
 - [x] PostgreSQL named volume `pg_data` preserves data across `docker compose down` and `docker compose up`.
 - [x] Concurrency safety invariant `HeldSeats + ConfirmedSeats <= TotalSeats` verified under 100 simultaneous requests.
+- [x] Multi-class same-student race conditions prevented via PostgreSQL advisory locks (`pg_advisory_xact_lock`).
 - [x] Auto-expiring background worker and on-the-fly expiration validation.
 - [x] Live countdown timer and automated polling (every 5s) on the frontend.
-- [x] Student identity preserved in `localStorage` across page reloads.
+- [x] Top-of-page 17-digit BRN input box (`#top-brn-input`) per exact Bengali assignment wording:
+  *"Login লাগবে না। Page-এর উপরে একটা ঘরে শিক্ষার্থীর জন্ম নিবন্ধন নম্বর লেখা যাবে। UI এটাকেই শিক্ষার্থীর পরিচয় হিসেবে ধরে নেবে। API-তে শিক্ষার্থীর পরিচয় আসবে X-Student-Id header দিয়ে।"*
+- [x] Clean student switching with confirmation modal and client query cache purging (`queryClient.clear()`), with full server-side PostgreSQL hold preservation.
+- [x] Admin Demonstration Portal (`/admin`) for class creation, shift filtering (`All Shifts`, `Morning Shift`, `Day Shift`), and capacity monitoring without authentication.
+- [x] All 8 mandatory REST API endpoints verified against original contracts.
+- [x] Complete documentation and test evidence tracked:
+  - `README.md`: Complete system architecture and quick start guide
+  - `ASSUMPTIONS.md`: 10 core engineering and domain decisions
+  - `AI_USAGE.md`: Full record of AI pair-programming assistance and critical human corrections
+  - `REQUIREMENT_TRACEABILITY.md`: 32-item assignment requirement traceability matrix
+  - `FINAL_ASSIGNMENT_COMPLIANCE_REPORT.md`: Phase 5 compliance audit report
+  - `FINAL_RELEASE_READINESS_REPORT.md`: Phase 6 release readiness report
+  - `e2e_evidence/`: 9 Chrome DevTools Protocol browser verification screenshots
