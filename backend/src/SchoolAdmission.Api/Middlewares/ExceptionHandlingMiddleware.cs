@@ -7,6 +7,12 @@ namespace SchoolAdmission.Api.Middlewares;
 
 public class ExceptionHandlingMiddleware
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
+
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly IHostEnvironment _environment;
@@ -91,11 +97,7 @@ public class ExceptionHandlingMiddleware
             timestamp = DateTime.UtcNow
         };
 
-        var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-        });
+        var json = JsonSerializer.Serialize(response, JsonOptions);
 
         await context.Response.WriteAsync(json);
     }

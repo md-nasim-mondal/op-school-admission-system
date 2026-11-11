@@ -30,13 +30,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddCors(options =>
 {
     var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-        ?? new[]
-        {
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:5173"
-        };
+        ?? DefaultAllowedOrigins;
 
     options.AddPolicy("AllowFrontend", policy =>
     {
@@ -97,4 +91,13 @@ app.MapControllers();
 app.Run();
 
 // Make Program accessible to integration tests
-public partial class Program { }
+public partial class Program
+{
+    private static readonly string[] DefaultAllowedOrigins =
+    [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ];
+}
