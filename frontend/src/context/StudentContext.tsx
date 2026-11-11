@@ -1,37 +1,61 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+
+export const DEMO_STUDENT_A = '20152691234567890';
+export const DEMO_STUDENT_B = '20152699876543210';
 
 interface StudentContextType {
   studentId: string;
-  setStudentId: (id: string) => void;
   isValidBRN: boolean;
+  isIdentified: boolean;
+  identifyStudent: (id: string) => void;
+  clearStudent: () => void;
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
-const DEFAULT_DEMO_ID = '20152691234567890';
-
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
+
   const [studentId, setStudentIdState] = useState<string>(() => {
-    return localStorage.getItem('student_id') || DEFAULT_DEMO_ID;
+    return localStorage.getItem('student_id') || '';
   });
 
   const isValidBRN = /^\d{17}$/.test(studentId.trim());
+  const isIdentified = isValidBRN && studentId.length === 17;
 
-  const setStudentId = (newId: string) => {
-    const sanitized = newId.replace(/\D/g, '');
+  const identifyStudent = useCallback((newId: string) => {
+    const sanitized = newId.replace(/\D/g, '').slice(0, 17);
     setStudentIdState(sanitized);
-    localStorage.setItem('student_id', sanitized);
-  };
+    if (/^\d{17}$/.test(sanitized)) {
+      localStorage.setItem('student_id', sanitized);
+    }
+  }, []);
 
+  const clearStudent = useCallback(() => {
+    localStorage.removeItem('student_id');
+    setStudentIdState('');
+    // Clear all cached queries so previous student data does not leak
+    queryClient.clear();
+  }, [queryClient]);
+
+  // Keep localStorage synchronized when valid ID is present
   useEffect(() => {
-    const stored = localStorage.getItem('student_id');
-    if (!stored) {
+    if (studentId && isValidBRN) {
       localStorage.setItem('student_id', studentId);
     }
-  }, [studentId]);
+  }, [studentId, isValidBRN]);
 
   return (
-    <StudentContext.Provider value={{ studentId, setStudentId, isValidBRN }}>
+    <StudentContext.Provider
+      value={{
+        studentId,
+        isValidBRN,
+        isIdentified,
+        identifyStudent,
+        clearStudent,
+      }}
+    >
       {children}
     </StudentContext.Provider>
   );

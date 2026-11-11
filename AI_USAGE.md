@@ -39,13 +39,15 @@ In accordance with the evaluation requirements of Onnorokom Projukti Limited, th
 | **Host Port 5432 Collision** | Host machine had a preexisting system PostgreSQL service listening on port 5432. | `docker run` failed with `address already in use` when binding `5432:5432`. | Configured `docker-compose.yml` with `${DB_PORT:-5434}:5432` and internal container networking `db:5432`, preventing host port collision while keeping internal communication standard. |
 | **Cross-Class Simultaneous Student Race Condition** | When simultaneous requests for the SAME student targeted DIFFERENT classes, class-level `SELECT FOR UPDATE` locks did not serialize requests across different classes, allowing two holds to be created for one student. | Authoring the cross-class concurrency test `SameStudent_SimultaneousHoldRequestsAcrossDifferentClasses_ExactlyOneSucceeds` revealed `[Created, Created]` instead of `[Created, Conflict]`. | Implemented PostgreSQL transaction-scoped advisory locks on the student ID: `SELECT pg_advisory_xact_lock(hashtext(@studentId))`, guaranteeing cross-class serialization at the database engine level. |
 | **PostgreSQL Connection Pool Burst Exhaustion** | 100 simultaneous concurrent HTTP requests in integration testing exhausted PostgreSQL's default 100-connection client limit. | Concurrency test failed with `Npgsql.PostgresException: 53300: sorry, too many clients already`. | Increased PostgreSQL `max_connections` to 300 in `docker-compose.yml` and configured client pool connection settings in test harness. |
+| **Hardcoded Default Student ID & Missing Student Switching Workflow** | Student ID defaulted to `20152691234567890` on initial load, occupying permanent header space with no identity switching or query cache flushing between multiple applicants on the same machine. | End-to-end UX review of running interface identified inability to switch students without stale data leaks or manual input editing. | Redesigned identity flow: anonymous landing card for new visitors, compact navbar badge with dedicated "Switch Student" confirmation dialog, automated `queryClient.clear()` on switch to guarantee cache isolation, and dynamic class action states (`Apply for Admission`, `Continue Application`, `Admission Confirmed`, `Already Admitted to Another Class`, `Application Already Active`, `No Seats Available`, `Apply Again`). |
 
 ---
 
 ### 4. Verification & Validation Performed
 Every line of code and test was verified through actual runtime execution:
 - .NET 8 test suite executed: **32 tests passed (19 Unit tests + 13 Integration & Concurrency tests, 0 failed)**.
-- React 19 frontend test suite executed: **6 Vitest tests passed (0 failed)**.
-- Total automated tests: **38 tests passing (100% success rate)**.
-- Frontend production bundle built successfully with Vite in 1.63s.
+- React 19 frontend test suite executed: **17 Vitest tests passed (0 failed)** across component, identity workflow, and action state suites.
+- Total automated tests: **49 tests passing (100% success rate)**.
+- Full 5-journey end-to-end headless browser test suite executed via Chrome DevTools Protocol (`scratch_journey_test.py` passing 100%).
+- Frontend production bundle built successfully with Vite in 1.93s.
 - Multi-stage Docker images built and orchestrated via Docker Compose.

@@ -76,3 +76,15 @@ This document details all technical and architectural assumptions made during th
 ### 9. Host Port Configuration for PostgreSQL Container
 - **Assumption:** The host port mapped to PostgreSQL in `docker-compose.yml` defaults to `5434:5432` (or configurable via `${DB_PORT:-5434}`).
 - **Reasoning:** Many developer workstations already run a local PostgreSQL service on host port 5432. Mapping host port 5434 prevents port-collision failures while the internal Docker Compose bridge network (`school_net`) allows the backend container to connect directly to `db:5432`.
+
+---
+
+### 10. Student Identification Workflow, Student Switching & Cache Isolation
+- **Assumption:** No conventional authentication (passwords, JWT, OTP, registration) is required or permitted by the assignment. However, multiple applicants/parents use the same browser/workstation, necessitating a clean identity declaration screen and an explicit "Switch Student" workflow.
+- **Reasoning:** Pre-populating a hardcoded demo BRN on first page load gives the false appearance of an authenticated session and prevents testing multiple independent students.
+- **Design:**
+  1. A fresh visitor sees a dedicated Student Identification Screen where they enter their 17-digit BRN (with quick presets for Demo Student A and Demo Student B).
+  2. Once identified, the navbar displays a compact student badge with a visible "Switch Student" action.
+  3. Clicking "Switch Student" prompts a confirmation dialog, clears `localStorage`, completely purges TanStack Query client cache (`queryClient.clear()`), and resets local React state.
+  4. Server-side database records, active holds, and confirmed admissions belonging to the previous student remain 100% untouched and preserved on PostgreSQL.
+  5. Class action buttons dynamically communicate the precise status: `Apply for Admission`, `Continue Application`, `Admission Confirmed`, `Already Admitted to Another Class`, `Application Already Active`, `No Seats Available`, and `Apply Again` (when eligible after expiration/cancellation).
