@@ -147,7 +147,7 @@ export const ActiveHoldCard: React.FC<ActiveHoldCardProps> = ({
             type="button"
             disabled={isCancelling || isConfirming}
             onClick={handleCancel}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 transition-colors"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <Ban className="w-4 h-4" />
             {isCancelling ? "Cancelling..." : "Cancel Application"}
@@ -157,7 +157,7 @@ export const ActiveHoldCard: React.FC<ActiveHoldCardProps> = ({
             type="button"
             disabled={isConfirming || isCancelling}
             onClick={handleConfirm}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 shadow-sm transition-colors cursor-pointer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors cursor-pointer"
           >
             <CreditCard className="w-4 h-4" />
             {isConfirming

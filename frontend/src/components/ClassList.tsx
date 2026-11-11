@@ -100,10 +100,10 @@ export const ClassList: React.FC<ClassListProps> = ({
           return (
             <div
               key={c.id}
-              className={`rounded-2xl border p-5 flex flex-col justify-between transition-all bg-white hover:shadow-md ${
+              className={`rounded-2xl border border-slate-200 p-5 flex flex-col justify-between transition-all bg-white hover:shadow-md ${
                 isFull
-                  ? 'border-slate-200 opacity-80'
-                  : 'border-slate-200 hover:border-blue-300'
+                  ? 'opacity-80'
+                  : 'hover:border-blue-300'
               }`}
             >
               <div>
@@ -164,14 +164,14 @@ export const ClassList: React.FC<ClassListProps> = ({
                   type="button"
                   disabled={isFull || isApplyingThis || !isValidBRN || hasActiveHoldOrConfirmed}
                   onClick={() => handleApplyClick(c.id)}
-                  className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`w-full py-2.5 px-4 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
                     isFull
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                       : !isValidBRN
                       ? 'bg-slate-100 text-slate-500 hover:bg-slate-200 cursor-pointer'
                       : hasActiveHoldOrConfirmed
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm cursor-pointer'
                   }`}
                   title={
                     isFull

@@ -6,7 +6,7 @@ export const StudentIdInput: React.FC = () => {
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-      <div className="flex items-center gap-2 bg-slate-50 p-1.5 px-3 rounded-xl border border-slate-200 w-full sm:w-auto">
+      <div className="flex items-center gap-2 bg-slate-50 py-1.5 px-3 rounded-xl border border-slate-200 w-full sm:w-auto">
         <User className="w-4 h-4 text-slate-500 shrink-0" />
         <div className="flex flex-col">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
