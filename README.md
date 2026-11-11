@@ -36,8 +36,8 @@ Each class shift (e.g., *"Class 6 - Morning Shift"* with 120 seats, *"Class 6 - 
   - **Student-Level Cross-Class Protection:** PostgreSQL transaction-scoped advisory locks (`SELECT pg_advisory_xact_lock(hashtext(studentId))`) serialize hold requests for the same student across different classes, preventing race conditions.
 
 ### Frontend
-- **React 19** + **TypeScript** (Strict Mode)
-- **React Router v7** with modular layout (`MainLayout`), route configuration (`routes/index.tsx`), and standalone page components (`StudentPortalPage`, `AdminPage`)
+- **React 19** + **TypeScript** (Strict Mode, zero `any` types)
+- **React Router v7** with modular layout (`MainLayout`), lazy route `Suspense` loading (`PageLoader`), wildcard `404` page (`NotFoundPage`), route `errorElement` (`ErrorPage`), and top-level `GlobalErrorBoundary`
 - **Vite 6** bundler
 - **Tailwind CSS v4** for clean, responsive UI design
 - **TanStack Query (React Query v5)** for optimistic UI updates, automated background polling (every 5s for real-time seat counts), and cache management
@@ -46,7 +46,7 @@ Each class shift (e.g., *"Class 6 - Morning Shift"* with 120 seats, *"Class 6 - 
 
 ### Infrastructure & Database
 - **PostgreSQL 16 (Alpine)**
-- **Docker** multi-stage builds (.NET 8 SDK -> lean ASP.NET runtime; Node 22 build -> Nginx Alpine runtime)
+- **Docker** multi-stage builds (.NET 8 SDK -> lean ASP.NET runtime; Node 26 Active LTS Alpine build -> hardened `nginx:1.31.8-alpine-slim` runtime with `apk upgrade --no-cache`)
 - **Docker Compose** orchestration with health checks and persistent volume `pg_data`.
 
 ---
@@ -82,7 +82,7 @@ school-admission-system/
 └── frontend/
     ├── .env.example                        # Example Vite API base URL config for local dev
     ├── .dockerignore                       # Excludes node_modules/dist from Docker context
-    ├── Dockerfile                          # BuildKit-cached npm ci + Nginx production image
+    ├── Dockerfile                          # BuildKit-cached npm ci (Node 26 LTS) + nginx:1.31.8-alpine-slim
     ├── nginx.conf                          # SPA routing fallback configuration
     ├── scripts/
     │   └── ensure-deps.mjs                 # Smart dependency hash check (skips redundant npm install)
@@ -94,20 +94,24 @@ school-admission-system/
         │   ├── layout/                     # Navbar, Footer, StudentIdInput, SwitchStudentModal
         │   ├── student/                    # StudentIdentificationCard, ActiveHoldSection, StatusBanner
         │   ├── ActiveHoldCard.tsx          # Active application card with live countdown & payment trigger
-        │   ├── AdminDashboard.tsx          # Admin capacity management, shift filters, capacity gauges
+        │   ├── AdminDashboard.tsx          # Admin capacity management, shift filters, loading/error states
         │   ├── ApplicationHistory.tsx      # Student application history table
         │   ├── Badge.tsx                   # Status badges (HELD, CONFIRMED, EXPIRED, CANCELLED)
-        │   ├── ClassList.tsx               # Class grid with live seat counts and 8 action states
+        │   ├── ClassList.tsx               # Class grid with live seat counts, loading/error & action states
         │   ├── CountdownTimer.tsx          # Live MM:SS timer with auto-expiration callback
         │   ├── CreateClassModal.tsx        # Admin class creation modal
+        │   ├── ErrorBoundary.tsx           # Top-level React GlobalErrorBoundary
+        │   ├── ErrorFallbackCard.tsx       # Unified accessible error alert & recovery actions
+        │   ├── LoadingState.tsx            # Semantic <progress> spinner, skeletons, and PageLoader
         │   └── Toast.tsx                   # Toast notifications
         ├── context/                        # StudentContext, ToastContext
-        ├── layouts/                        # MainLayout with header, navigation, and footer
-        ├── pages/                          # StudentPortalPage, AdminPage
-        ├── routes/                         # React Router v7 route definitions
-        ├── test/                           # 19 Vitest unit & integration tests
+        ├── layouts/                        # MainLayout with header, Suspense PageLoader, and footer
+        ├── pages/                          # StudentPortalPage, AdminPage, ErrorPage, NotFoundPage
+        ├── routes/                         # React Router v7 routes, errorElement boundaries & 404 wildcard
+        ├── test/                           # 26 Vitest unit & integration tests across 5 suites
         ├── types/                          # TypeScript interfaces matching backend DTOs
-        ├── App.tsx                         # App root with QueryClient and RouterProvider
+        ├── utils/                          # errors.ts (safe unknown error extraction helper)
+        ├── App.tsx                         # App root with GlobalErrorBoundary, QueryClient, and RouterProvider
         └── main.tsx
 ```
 
@@ -337,7 +341,7 @@ List all applications submitted by the student.
 
 ## 7. Automated Testing Suite
 
-The repository includes a comprehensive 49-test automated testing suite covering Unit tests, Integration tests, High-Concurrency stress tests, and UI component tests.
+The repository includes a comprehensive 58-test automated testing suite covering Unit tests, Integration tests, High-Concurrency stress tests, and UI component/router tests.
 
 ### Running Backend Tests
 Ensure .NET 8 SDK is installed and PostgreSQL is running (or start the test container):
@@ -370,7 +374,7 @@ npm --prefix frontend test -- --run
 npm --prefix frontend run build
 ```
 
-#### Test Breakdown (19 Tests across 4 suites — 100% Passing):
+#### Test Breakdown (26 Tests across 5 suites — 100% Passing):
 - `Badge.test.tsx` (4 tests): Verifies status badge labels and CSS styling for `HELD`, `CONFIRMED`, `EXPIRED`, and `CANCELLED`.
 - `CountdownTimer.test.tsx` (2 tests): Verifies real-time MM:SS countdown formatting and zero-expiration callback invocation.
 - `StudentIdentityWorkflow.test.tsx` (6 tests): Verifies anonymous fresh visitor state, manual "Submit ID" confirmation preventing premature auto-save while typing, locking/disabling the BRN input once committed until "Switch Student" is clicked, "Demo ID" quick-fill helper without auto-save, 17-digit BRN validation, leading zero preservation, and student switching with cache purging (`queryClient.clear()`).
@@ -384,6 +388,7 @@ npm --prefix frontend run build
   - `Application Already Active` (holds seat in another class)
   - `No Seats Available` (class is full)
   - `Apply Again` (eligible to reapply after previous hold expired or cancelled)
+- `GlobalFeedbackStates.test.tsx` (7 tests): Verifies top-level `GlobalErrorBoundary`, React Router `errorElement` (`ErrorPage`), unmatched wildcard `404` `NotFoundPage` inside `MainLayout`, semantic `<progress>` `LoadingState` / `PageLoader`, and retryable API error states in `ClassList` and `AdminDashboard`.
 
 ---
 
@@ -400,11 +405,12 @@ npm --prefix frontend run build
 - [x] Top-of-page 17-digit BRN input box (`#top-brn-input`) per exact Bengali assignment wording:
   *"Login লাগবে না। Page-এর উপরে একটা ঘরে শিক্ষার্থীর জন্ম নিবন্ধন নম্বর লেখা যাবে। UI এটাকেই শিক্ষার্থীর পরিচয় হিসেবে ধরে নেবে। API-তে শিক্ষার্থীর পরিচয় আসবে X-Student-Id header দিয়ে।"*
 - [x] Explicit **Submit ID** confirmation + non-auto-saving **Demo ID** quick-fill helper + **locked (`disabled`) BRN input** once committed until **Switch Student** is clicked (preventing accidental mid-session edits).
+- [x] Global React `GlobalErrorBoundary`, React Router `errorElement` (`ErrorPage`), dedicated wildcard `404` `NotFoundPage`, accessible `<progress>` loading states (`LoadingState`, lazy-route `PageLoader`), and strict zero-`any` TypeScript coverage.
 - [x] Fully responsive layout verified in Google Chrome across **260px ultra-narrow mobile, 320px, 375px, 768px tablet, and 1280px+ desktop** (0 horizontal overflows; `@container`-driven responsive stacked table cards on narrow screens).
 - [x] Clean student switching with confirmation modal and client query cache purging (`queryClient.clear()`), with full server-side PostgreSQL hold preservation.
 - [x] Admin Demonstration Portal (`/admin`) for class creation, shift filtering (`All Shifts`, `Morning Shift`, `Day Shift`), and capacity monitoring without authentication.
 - [x] All 8 mandatory REST API endpoints verified against original contracts (plus manual Swagger OpenAPI `3.0.1` UI verification).
-- [x] Complete documentation, 51 automated tests (32 Backend + 19 Frontend), and live Chrome E2E verification evidence tracked:
+- [x] Complete documentation, 58 automated tests (32 Backend + 26 Frontend), and live Chrome E2E verification evidence tracked:
   - `README.md`: Complete system architecture, Docker Compose, and local development run guide
   - `ASSUMPTIONS.md`: 10 core engineering and domain decisions
   - `AI_USAGE.md`: Full record of AI pair-programming assistance, human manual QA discoveries, and critical corrections

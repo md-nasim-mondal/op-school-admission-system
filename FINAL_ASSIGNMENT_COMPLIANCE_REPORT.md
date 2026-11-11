@@ -117,22 +117,24 @@ Total tests: 32
 
 ### 6.2 Frontend Tests (React 19 Vitest)
 ```
-Test Files: 4 passed (4)
-Tests:      19 passed (19)
-Duration:   1.31s
+Test Files: 5 passed (5)
+Tests:      26 passed (26)
+Duration:   1.62s
 - Badge.test.tsx: 4/4 passed
 - CountdownTimer.test.tsx: 2/2 passed
 - StudentIdentityWorkflow.test.tsx: 6/6 passed (explicit Submit ID, Demo ID quick fill, locked BRN input, cache purge)
 - ClassActionStates.test.tsx: 7/7 passed
+- GlobalFeedbackStates.test.tsx: 7/7 passed (GlobalErrorBoundary, ErrorPage, 404 NotFoundPage, semantic <progress> LoadingState, API error retries)
 ```
 
 ### 6.3 Frontend Production Build
 ```
 vite v6.4.6 building for production...
-✓ 1728 modules transformed.
-dist/index.html                   0.58 kB
-dist/assets/index-CXQ_iDeS.css   45.33 kB
-dist/assets/index-Cpl7dmE9.js   485.41 kB
+✓ 1735 modules transformed.
+dist/index.html                    0.58 kB
+dist/assets/index-Cl60cRd1.css    49.76 kB
+dist/assets/AdminPage-D0WhA7_F.js 17.06 kB
+dist/assets/index-BLgFJNR8.js    483.17 kB
 ✓ built in 2.06s (0 errors, 0 warnings)
 ```
 

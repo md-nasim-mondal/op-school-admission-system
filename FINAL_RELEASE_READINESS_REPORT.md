@@ -138,23 +138,25 @@ Time:    3.49s
 ### 4.3 Frontend Automated Tests (Vitest)
 ```text
 Command: npm --prefix frontend test -- --run
-Status:  Test Files: 4 passed | Tests: 19 passed | Failed: 0
-Time:    1.31s
+Status:  Test Files: 5 passed | Tests: 26 passed | Failed: 0
+Time:    1.62s
 - Badge.test.tsx:                  4/4 PASSED
 - CountdownTimer.test.tsx:         2/2 PASSED
 - StudentIdentityWorkflow.test.tsx: 6/6 PASSED (Submit ID, Demo ID, Locked Input, Switch Purge)
 - ClassActionStates.test.tsx:      7/7 PASSED
+- GlobalFeedbackStates.test.tsx:   7/7 PASSED (ErrorBoundary, ErrorPage, 404 NotFoundPage, LoadingState, API retries)
 ```
 
 ### 4.4 Frontend Production Bundle Build
 ```text
 Command: npm --prefix frontend run build
-Status:  tsc -b && vite build (Exit code 0)
+Status:  tsc -b && vite build (Exit code 0, 0 warnings)
 Time:    2.06s
 Outputs:
-- dist/index.html                  0.58 kB
-- dist/assets/index-CXQ_iDeS.css  45.33 kB
-- dist/assets/index-Cpl7dmE9.js  485.41 kB
+- dist/index.html                     0.58 kB
+- dist/assets/index-Cl60cRd1.css     49.76 kB
+- dist/assets/AdminPage-D0WhA7_F.js  17.06 kB (lazy chunk)
+- dist/assets/index-BLgFJNR8.js     483.17 kB
 ```
 
 ---
@@ -207,7 +209,7 @@ Outputs:
 | **REQ-26** | Real-time countdown timer without page reload | `CountdownTimer.tsx` | **PASS** |
 | **REQ-27** | Automated background seat polling (5-second refetch) | `useQuery` (`refetchInterval: 5000`) | **PASS** |
 | **REQ-28** | Refresh resilience (reloads restore state from backend) | `StudentContext.tsx`, `StudentPortalPage.tsx` | **PASS** |
-| **REQ-29** | Automated tests (Unit + 100-request high concurrency test) | 32 Backend + 19 Frontend = 51 tests | **PASS** |
+| **REQ-29** | Automated tests (Unit + 100-request high concurrency test) | 32 Backend + 26 Frontend = 58 tests | **PASS** |
 | **REQ-30** | Multi-class cross-booking prevention (advisory locks) | `AdmissionService.cs`, xUnit test | **PASS** |
 | **REQ-31** | Database persistence across container restarts | Named volume `pg_data` | **PASS** |
 | **REQ-32** | Required documentation (`README`, `ASSUMPTIONS`, `AI_USAGE`) | Root repository files | **PASS** |
