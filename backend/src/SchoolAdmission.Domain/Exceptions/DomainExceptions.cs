@@ -1,24 +1,12 @@
 namespace SchoolAdmission.Domain.Exceptions;
 
-public abstract class BaseDomainException : Exception
-{
-    protected BaseDomainException(string message) : base(message) { }
-}
+public abstract class BaseDomainException(string message) : Exception(message);
 
-public class NotFoundException : BaseDomainException
-{
-    public NotFoundException(string message) : base(message) { }
-}
+public class NotFoundException(string message) : BaseDomainException(message);
 
-public class ConflictException : BaseDomainException
-{
-    public ConflictException(string message) : base(message) { }
-}
+public class ConflictException(string message) : BaseDomainException(message);
 
-public class ForbiddenException : BaseDomainException
-{
-    public ForbiddenException(string message) : base(message) { }
-}
+public class ForbiddenException(string message) : BaseDomainException(message);
 
 public class ValidationException : BaseDomainException
 {

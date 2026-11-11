@@ -10,7 +10,7 @@ public class ClassEntity
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public ICollection<AdmissionHold> Holds { get; set; } = new List<AdmissionHold>();
+    public ICollection<AdmissionHold> Holds { get; set; } = [];
 
     public (int HeldSeats, int ConfirmedSeats, int AvailableSeats) CalculateSeatCounts(DateTime nowUtc)
     {

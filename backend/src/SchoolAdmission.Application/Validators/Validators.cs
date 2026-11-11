@@ -17,16 +17,17 @@ public class CreateClassRequestValidator : AbstractValidator<CreateClassRequest>
     }
 }
 
-public static class StudentIdValidator
+public static partial class StudentIdValidator
 {
-    private static readonly Regex BirthRegistrationRegex = new(@"^\d{17}$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^\d{17}$")]
+    private static partial Regex BirthRegistrationRegex();
 
     public static bool IsValid(string? studentId)
     {
         if (string.IsNullOrWhiteSpace(studentId))
             return false;
 
-        return BirthRegistrationRegex.IsMatch(studentId.Trim());
+        return BirthRegistrationRegex().IsMatch(studentId.Trim());
     }
 
     public static void Validate(string? studentId)
@@ -37,7 +38,7 @@ public static class StudentIdValidator
         }
 
         var trimmed = studentId.Trim();
-        if (!BirthRegistrationRegex.IsMatch(trimmed))
+        if (!BirthRegistrationRegex().IsMatch(trimmed))
         {
             throw new Domain.Exceptions.ValidationException(
                 "X-Student-Id must be a valid 17-digit Birth Registration Number.");
