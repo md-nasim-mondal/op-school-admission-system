@@ -24,12 +24,13 @@ Each class shift (e.g., *"Class 6 - Morning Shift"* with 120 seats, *"Class 6 - 
 ## 2. Technology Stack & Architecture
 
 ### Backend
-- **C# / .NET 8 (ASP.NET Core Web API)**
+- **C# 12 / .NET 8 (ASP.NET Core Web API)**
+- **Modern Idioms & Performance:** Primary constructors across controllers/middleware, compile-time `[GeneratedRegex]` source generator, collection expressions `[]`, cached `JsonSerializerOptions` (CA1869), and `static readonly` CORS fallback array (CA1861).
 - **Architecture:** Modular Monolith with clean separation of concerns:
   - `SchoolAdmission.Domain`: Core entities (`ClassEntity`, `AdmissionHold`), enums (`HoldStatus`), invariants, domain exceptions.
   - `SchoolAdmission.Application`: Use cases, DTOs, FluentValidation rules (`CreateClassRequestValidator`, `StudentIdValidator`), service interfaces.
   - `SchoolAdmission.Infrastructure`: Entity Framework Core 8, Npgsql PostgreSQL provider, PostgreSQL row-level locking (`SELECT ... FOR UPDATE`), `HoldExpirationBackgroundService` worker.
-  - `SchoolAdmission.Api`: Thin REST controllers, Global Exception Handling Middleware (translating domain errors to appropriate 4xx/5xx responses), OpenAPI/Swagger.
+  - `SchoolAdmission.Api`: Thin REST controllers, Global Exception Handling Middleware (translating domain errors to appropriate 4xx/5xx responses), OpenAPI/Swagger UI v3.0.1.
 - **Concurrency Control:** Multi-tier database-level concurrency protection:
   - **Class-Level Seat Protection:** Explicit pessimistic row locking (`SELECT ... FOR UPDATE`) on the class record inside read-committed transactions guarantees `HeldSeats + ConfirmedSeats <= TotalSeats` under high simultaneous load.
   - **Student-Level Cross-Class Protection:** PostgreSQL transaction-scoped advisory locks (`SELECT pg_advisory_xact_lock(hashtext(studentId))`) serialize hold requests for the same student across different classes, preventing race conditions.
