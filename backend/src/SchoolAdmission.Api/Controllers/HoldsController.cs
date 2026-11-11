@@ -6,21 +6,14 @@ using SchoolAdmission.Application.Validators;
 namespace SchoolAdmission.Api.Controllers;
 
 [ApiController]
-public class HoldsController : ControllerBase
+public class HoldsController(IAdmissionService admissionService) : ControllerBase
 {
-    private readonly IAdmissionService _admissionService;
-
-    public HoldsController(IAdmissionService admissionService)
-    {
-        _admissionService = admissionService;
-    }
-
     [HttpGet("holds/{holdId}")]
     [ProducesResponseType(typeof(HoldStatusResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetHoldById(string holdId, CancellationToken cancellationToken)
     {
-        var response = await _admissionService.GetHoldByIdAsync(holdId, cancellationToken);
+        var response = await admissionService.GetHoldByIdAsync(holdId, cancellationToken);
         return Ok(response);
     }
 
@@ -37,7 +30,7 @@ public class HoldsController : ControllerBase
     {
         StudentIdValidator.Validate(studentId);
 
-        var response = await _admissionService.ConfirmHoldAsync(holdId, studentId!, cancellationToken);
+        var response = await admissionService.ConfirmHoldAsync(holdId, studentId!, cancellationToken);
         return Ok(response);
     }
 
@@ -54,7 +47,7 @@ public class HoldsController : ControllerBase
     {
         StudentIdValidator.Validate(studentId);
 
-        await _admissionService.CancelHoldAsync(holdId, studentId!, cancellationToken);
+        await admissionService.CancelHoldAsync(holdId, studentId!, cancellationToken);
         return NoContent();
     }
 }

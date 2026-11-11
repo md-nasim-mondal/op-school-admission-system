@@ -6,15 +6,8 @@ using SchoolAdmission.Application.Validators;
 namespace SchoolAdmission.Api.Controllers;
 
 [ApiController]
-public class StudentController : ControllerBase
+public class StudentController(IAdmissionService admissionService) : ControllerBase
 {
-    private readonly IAdmissionService _admissionService;
-
-    public StudentController(IAdmissionService admissionService)
-    {
-        _admissionService = admissionService;
-    }
-
     [HttpGet("me/holds")]
     [ProducesResponseType(typeof(IReadOnlyList<StudentHoldResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -24,7 +17,7 @@ public class StudentController : ControllerBase
     {
         StudentIdValidator.Validate(studentId);
 
-        var response = await _admissionService.GetHoldsByStudentAsync(studentId!, cancellationToken);
+        var response = await admissionService.GetHoldsByStudentAsync(studentId!, cancellationToken);
         return Ok(response);
     }
 }

@@ -6,21 +6,14 @@ using SchoolAdmission.Application.Validators;
 namespace SchoolAdmission.Api.Controllers;
 
 [ApiController]
-public class ClassesController : ControllerBase
+public class ClassesController(IAdmissionService admissionService) : ControllerBase
 {
-    private readonly IAdmissionService _admissionService;
-
-    public ClassesController(IAdmissionService admissionService)
-    {
-        _admissionService = admissionService;
-    }
-
     [HttpPost("classes")]
     [ProducesResponseType(typeof(ClassCreatedResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateClass([FromBody] CreateClassRequest request, CancellationToken cancellationToken)
     {
-        var response = await _admissionService.CreateClassAsync(request, cancellationToken);
+        var response = await admissionService.CreateClassAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetClassById), new { classId = response.Id }, response);
     }
 
@@ -28,7 +21,7 @@ public class ClassesController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<ClassDetailsResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllClasses(CancellationToken cancellationToken)
     {
-        var response = await _admissionService.GetAllClassesAsync(cancellationToken);
+        var response = await admissionService.GetAllClassesAsync(cancellationToken);
         return Ok(response);
     }
 
@@ -37,7 +30,7 @@ public class ClassesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetClassById(string classId, CancellationToken cancellationToken)
     {
-        var response = await _admissionService.GetClassByIdAsync(classId, cancellationToken);
+        var response = await admissionService.GetClassByIdAsync(classId, cancellationToken);
         return Ok(response);
     }
 
@@ -53,7 +46,7 @@ public class ClassesController : ControllerBase
     {
         StudentIdValidator.Validate(studentId);
 
-        var response = await _admissionService.CreateHoldAsync(classId, studentId!, cancellationToken);
+        var response = await admissionService.CreateHoldAsync(classId, studentId!, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, response);
     }
 }

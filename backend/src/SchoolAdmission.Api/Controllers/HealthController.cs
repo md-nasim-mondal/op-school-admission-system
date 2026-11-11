@@ -5,21 +5,14 @@ using SchoolAdmission.Infrastructure.Data;
 namespace SchoolAdmission.Api.Controllers;
 
 [ApiController]
-public class HealthController : ControllerBase
+public class HealthController(ApplicationDbContext dbContext) : ControllerBase
 {
-    private readonly ApplicationDbContext _dbContext;
-
-    public HealthController(ApplicationDbContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
-
     [HttpGet("health")]
     public async Task<IActionResult> CheckHealth(CancellationToken cancellationToken)
     {
         try
         {
-            await _dbContext.Database.ExecuteSqlRawAsync("SELECT 1", cancellationToken);
+            await dbContext.Database.ExecuteSqlRawAsync("SELECT 1", cancellationToken);
             return Ok(new
             {
                 status = "Healthy",
