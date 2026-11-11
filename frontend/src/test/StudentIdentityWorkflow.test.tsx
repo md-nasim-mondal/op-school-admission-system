@@ -160,4 +160,39 @@ describe('StudentIdentityWorkflow and Switching', () => {
     expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_A);
     expect(localStorage.getItem('student_id')).toBe(TEST_STUDENT_A);
   });
+
+  it('StudentIdInput Quick Fill Demo ID populates input and enables Submit without auto-saving', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <StudentProvider>
+            <StudentIdInput />
+            <TestConsumer />
+          </StudentProvider>
+        </ToastProvider>
+      </QueryClientProvider>
+    );
+
+    const input = screen.getByLabelText(/Student Birth Registration Number/i) as HTMLInputElement;
+    const demoBtn = screen.getByRole('button', { name: /Demo ID/i });
+    const submitBtn = screen.getByRole('button', { name: /Submit ID/i });
+
+    expect(input.value).toBe('');
+    expect(screen.getByTestId('is-identified').textContent).toBe('ANONYMOUS');
+
+    // Click Quick Fill Demo ID
+    fireEvent.click(demoBtn);
+
+    // Populates input with 17 digits but does NOT auto-submit yet
+    expect(input.value).toBe(TEST_STUDENT_A);
+    expect(screen.getByTestId('is-identified').textContent).toBe('ANONYMOUS');
+    expect(submitBtn).not.toBeDisabled();
+
+    // Now user clicks Submit ID
+    fireEvent.click(submitBtn);
+
+    // Identity is now confirmed and active
+    expect(screen.getByTestId('is-identified').textContent).toBe('IDENTIFIED');
+    expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_A);
+  });
 });
