@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, CheckCircle2, AlertCircle, ArrowLeftRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, CheckCircle2, AlertCircle, ArrowLeftRight, SendHorizontal } from 'lucide-react';
 import { useStudent } from '../../context/StudentContext';
 import { useToast } from '../../context/ToastContext';
 import { SwitchStudentModal } from './SwitchStudentModal';
@@ -7,10 +7,38 @@ import { SwitchStudentModal } from './SwitchStudentModal';
 export const StudentIdInput: React.FC = () => {
   const { studentId, setStudentId, isIdentified, clearStudent } = useStudent();
   const { addToast } = useToast();
+  const [inputValue, setInputValue] = useState(studentId);
   const [isSwitchModalOpen, setIsSwitchModalOpen] = useState(false);
+
+  // Keep local input in sync whenever context studentId changes (e.g. cleared on switch)
+  useEffect(() => {
+    setInputValue(studentId);
+  }, [studentId]);
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const sanitized = inputValue.replace(/\D/g, '').slice(0, 17);
+
+    if (sanitized.length !== 17) {
+      addToast(
+        'error',
+        `Birth Registration Number must be exactly 17 digits. (${sanitized.length}/17 entered)`,
+        'Invalid BRN'
+      );
+      return;
+    }
+
+    setStudentId(sanitized);
+    addToast(
+      'success',
+      `Student ID ${sanitized} confirmed. You can now apply for admission.`,
+      'Identity Set'
+    );
+  };
 
   const handleConfirmSwitch = () => {
     clearStudent();
+    setInputValue('');
     setIsSwitchModalOpen(false);
     addToast(
       'warning',
@@ -23,19 +51,25 @@ export const StudentIdInput: React.FC = () => {
     }, 100);
   };
 
+  const isCommittedAndActive = isIdentified && inputValue === studentId && studentId.length === 17;
+  const isReadyToSubmit = inputValue.length === 17 && (!isIdentified || inputValue !== studentId);
+
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto"
+    >
       {/* Required Top-of-Page 17-Digit Student BRN Input Box */}
       <div 
         className={`flex items-center gap-2 bg-slate-50 py-1.5 px-3 rounded-xl border transition-all ${
-          isIdentified 
+          isCommittedAndActive
             ? 'border-emerald-300 ring-2 ring-emerald-500/10' 
-            : studentId.length > 0 
-            ? 'border-amber-300' 
+            : inputValue.length > 0
+            ? 'border-blue-300 ring-2 ring-blue-500/10'
             : 'border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-500/10'
         }`}
       >
-        <User className={`w-4 h-4 shrink-0 ${isIdentified ? 'text-emerald-600' : 'text-slate-500'}`} />
+        <User className={`w-4 h-4 shrink-0 ${isCommittedAndActive ? 'text-emerald-600' : 'text-slate-500'}`} />
         <div className="flex flex-col">
           <label htmlFor="top-brn-input" className="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer">
             Student Birth Registration Number (17 Digits)
@@ -46,34 +80,62 @@ export const StudentIdInput: React.FC = () => {
             inputMode="numeric"
             maxLength={17}
             placeholder="e.g. 20152691234567890"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            className="bg-transparent text-sm font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-hidden w-48 sm:w-56"
+            value={inputValue}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '').slice(0, 17);
+              setInputValue(val);
+            }}
+            className="bg-transparent text-sm font-mono font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-normal focus:outline-hidden w-44 sm:w-52"
             autoComplete="off"
           />
         </div>
 
-        {/* Real-time Validation Status */}
-        {studentId.length > 0 && (
-          isIdentified ? (
-            <span title="Valid 17-digit BRN (Active)" className="shrink-0 flex items-center gap-1 text-emerald-600 text-xs font-semibold">
+        {/* Real-time Status / Counter */}
+        {inputValue.length > 0 && (
+          isCommittedAndActive ? (
+            <span title="Active Student ID (Confirmed)" className="shrink-0 flex items-center gap-1 text-emerald-600 text-xs font-semibold">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              <span className="hidden md:inline">Valid</span>
+              <span className="hidden md:inline">Active</span>
             </span>
           ) : (
-            <span 
-              className="text-xs text-amber-600 font-mono flex items-center gap-1 shrink-0" 
-              title={`${studentId.length}/17 digits`}
+            <span
+              className={`text-xs font-mono flex items-center gap-1 shrink-0 ${
+                inputValue.length === 17 ? 'text-blue-600 font-bold' : 'text-amber-600'
+              }`}
+              title={`${inputValue.length}/17 digits`}
             >
-              <AlertCircle className="w-3.5 h-3.5" />
-              {studentId.length}/17
+              {inputValue.length === 17 ? (
+                <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] uppercase font-bold tracking-wider">Ready</span>
+              ) : (
+                <>
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {inputValue.length}/17
+                </>
+              )}
             </span>
           )
         )}
       </div>
 
-      {/* Switch Student Action Button (Available when identified) */}
-      {isIdentified && (
+      {/* Explicit Submit Button (Visible when typing or not yet committed) */}
+      {(!isCommittedAndActive) && (
+        <button
+          type="submit"
+          disabled={inputValue.length !== 17}
+          className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+            isReadyToSubmit
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-2xs hover:shadow-xs cursor-pointer active:scale-95'
+              : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-75'
+          }`}
+          title={isReadyToSubmit ? "Click to set and activate student identity" : "Enter 17 digits to submit"}
+        >
+          <SendHorizontal className="w-3.5 h-3.5" />
+          <span>Submit ID</span>
+        </button>
+      )}
+
+      {/* Switch Student Action Button (Available when identified and committed) */}
+      {isCommittedAndActive && (
         <button
           type="button"
           onClick={() => setIsSwitchModalOpen(true)}
@@ -92,6 +154,6 @@ export const StudentIdInput: React.FC = () => {
         onClose={() => setIsSwitchModalOpen(false)}
         onConfirm={handleConfirmSwitch}
       />
-    </div>
+    </form>
   );
 };

@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StudentProvider, useStudent } from '../context/StudentContext';
+import { ToastProvider } from '../context/ToastContext';
+import { StudentIdInput } from '../components/layout/StudentIdInput';
 
 const TEST_STUDENT_A = '20152691234567890';
 const TEST_STUDENT_B = '20152699876543210';
@@ -121,5 +123,41 @@ describe('StudentIdentityWorkflow and Switching', () => {
     expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_B);
     expect(screen.getByTestId('is-identified').textContent).toBe('IDENTIFIED');
     expect(localStorage.getItem('student_id')).toBe(TEST_STUDENT_B);
+  });
+
+  it('StudentIdInput does not set identity automatically while typing until Submit is clicked', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <StudentProvider>
+            <StudentIdInput />
+            <TestConsumer />
+          </StudentProvider>
+        </ToastProvider>
+      </QueryClientProvider>
+    );
+
+    const input = screen.getByLabelText(/Student Birth Registration Number/i);
+    const submitBtn = screen.getByRole('button', { name: /Submit ID/i });
+
+    // Initially submit button is disabled and state is anonymous
+    expect(submitBtn).toBeDisabled();
+    expect(screen.getByTestId('is-identified').textContent).toBe('ANONYMOUS');
+
+    // Type 17 digits into input
+    fireEvent.change(input, { target: { value: TEST_STUDENT_A } });
+
+    // Still ANONYMOUS before clicking submit!
+    expect(screen.getByTestId('is-identified').textContent).toBe('ANONYMOUS');
+    expect(localStorage.getItem('student_id')).toBeNull();
+    expect(submitBtn).not.toBeDisabled();
+
+    // Click Submit
+    fireEvent.click(submitBtn);
+
+    // Now IDENTIFIED and persisted to localStorage!
+    expect(screen.getByTestId('is-identified').textContent).toBe('IDENTIFIED');
+    expect(screen.getByTestId('student-id').textContent).toBe(TEST_STUDENT_A);
+    expect(localStorage.getItem('student_id')).toBe(TEST_STUDENT_A);
   });
 });

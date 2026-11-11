@@ -363,10 +363,10 @@ npm --prefix frontend test -- --run
 npm --prefix frontend run build
 ```
 
-#### Test Breakdown (17 Tests across 4 suites — 100% Passing):
+#### Test Breakdown (18 Tests across 4 suites — 100% Passing):
 - `Badge.test.tsx` (4 tests): Verifies status badge labels and CSS styling for `HELD`, `CONFIRMED`, `EXPIRED`, and `CANCELLED`.
 - `CountdownTimer.test.tsx` (2 tests): Verifies real-time MM:SS countdown formatting and zero-expiration callback invocation.
-- `StudentIdentityWorkflow.test.tsx` (4 tests): Verifies anonymous fresh visitor state, 17-digit BRN validation, leading zero preservation, and student switching with cache purging (`queryClient.clear()`).
+- `StudentIdentityWorkflow.test.tsx` (5 tests): Verifies anonymous fresh visitor state, manual "Submit ID" confirmation preventing premature auto-save while typing, 17-digit BRN validation, leading zero preservation, and student switching with cache purging (`queryClient.clear()`).
 - `ClassActionStates.test.tsx` (7 tests): Verifies all dynamic class button states:
   - `Enter BRN Above to Apply` (unidentified visitor)
   - `Apply for Admission` (eligible to apply)
