@@ -15,8 +15,8 @@ This report provides the final, authoritative compliance audit of the School Adm
 
 Following the Phase 4 architectural review and user feedback, a targeted Phase 5 audit was performed to guarantee absolute fidelity to the original specification:
 1. **Top-of-Page BRN Input Restored:** The student Birth Registration Number input box is permanently mounted directly at the top of the application header (`#top-brn-input`), matching the exact wording: *"Login লাগবে না। Page-এর উপরে একটা ঘরে শিক্ষার্থীর জন্ম নিবন্ধন নম্বর লেখা যাবে। UI এটাকেই শিক্ষার্থীর পরিচয় হিসেবে ধরে নেবে। API-তে শিক্ষার্থীর পরিচয় আসবে X-Student-Id header দিয়ে।"*
-2. **Zero Pre-Seeded Identity:** Fresh visitors arrive in an anonymous state with an empty input field and no pre-stored credentials or demo shortcuts in production.
-3. **Leading-Zero & 17-Digit Preservation:** The identifier is strictly validated as a 17-character numeric string (`^\d{17}$`) across both frontend and backend layers, preserving leading zeros without numeric truncation.
+2. **Zero Pre-Seeded Identity:** Fresh visitors arrive in an anonymous state with an empty input field and no pre-stored credentials or auto-logged-in sessions.
+3. **Explicit Submission, Input Locking & Leading-Zero Preservation:** The identifier is validated as a 17-character numeric string (`^\d{17}$`), preserves leading zeros, requires clicking **Submit ID** (preventing accidental auto-save while typing), provides a non-auto-submitting **Demo ID** quick-fill helper for evaluators, and **locks (`disabled`)** `#top-brn-input` once active until **Switch Student** is clicked.
 4. **Student Switching with Client Cache Purge:** When switching students, client-side React state and TanStack Query cache are purged (`queryClient.clear()`) to prevent data leakage between applicants, while PostgreSQL server-side holds and admissions are completely preserved.
 5. **No Scope Creep / Unrequested Auth:** No password authentication, OAuth, JWT, email verification, or registration workflows were introduced.
 
@@ -33,11 +33,11 @@ Following the Phase 4 architectural review and user feedback, a targeted Phase 5
 |---|---|---|:---:|
 | **Top-of-Page Input Box** | `frontend/src/components/layout/StudentIdInput.tsx`<br>`#top-brn-input` | Mounted permanently in the navigation header bar. Directly accessible at all times on desktop and mobile. | **PASS** |
 | **No Hardcoded Identity for Fresh Visitors** | `frontend/src/context/StudentContext.tsx` | `localStorage.getItem('student_id')` is `null` on first visit. Input value is empty string `""`. | **PASS** |
-| **Real-time Validation & Feedback** | `frontend/src/components/layout/StudentIdInput.tsx` | Shows character counter (`{length}/17`) while typing; turns green with `Valid` checkmark once 17 digits are entered. | **PASS** |
+| **Real-time Validation, Explicit Submit & Lock** | `frontend/src/components/layout/StudentIdInput.tsx` | Shows character counter (`{length}/17`) and `Ready` state on 17 digits without auto-saving; clicking **Submit ID** activates the session (`Active` + Lock icon) and disables editing until **Switch Student**. | **PASS** |
 | **Preservation of Leading Zeros** | `StudentContext.tsx` & `backend/Validators.cs` | Handled as a string across all layers. BRNs like `00000000000000001` or `01234567890123456` retain all leading zeros. | **PASS** |
-| **X-Student-Id Request Header** | `frontend/src/api/client.ts` | Axios request interceptor injects `X-Student-Id: <brn>` automatically when valid 17-digit BRN is present. | **PASS** |
+| **X-Student-Id Request Header** | `frontend/src/api/client.ts` | Axios request interceptor injects `X-Student-Id: <brn>` automatically when valid 17-digit BRN is confirmed. | **PASS** |
 | **Class Card Guidance for Unidentified Visitors** | `frontend/src/components/ClassList.tsx` | When unverified, action buttons display `"Enter BRN Above to Apply"` (disabled) with an informational guidance hero card. | **PASS** |
-| **Removal of Demo Preset Buttons** | `StudentIdentificationCard.tsx` | Quick demo buttons ("Demo Student A" / "Demo Student B") were removed from the production UI to ensure pure assignment fidelity. | **PASS** |
+| **Non-Auto-Submitting Quick Fill Demo Helper** | `StudentIdInput.tsx` & `StudentIdentificationCard.tsx` | Auto-login demo cards removed from landing view; a subtle **Demo ID** button in header populates the 17-digit sample BRN without auto-saving so explicit **Submit ID** confirmation is always preserved. | **PASS** |
 
 ---
 
@@ -118,11 +118,11 @@ Total tests: 32
 ### 6.2 Frontend Tests (React 19 Vitest)
 ```
 Test Files: 4 passed (4)
-Tests:      17 passed (17)
-Duration:   1.39s
+Tests:      19 passed (19)
+Duration:   1.31s
 - Badge.test.tsx: 4/4 passed
 - CountdownTimer.test.tsx: 2/2 passed
-- StudentIdentityWorkflow.test.tsx: 4/4 passed
+- StudentIdentityWorkflow.test.tsx: 6/6 passed (explicit Submit ID, Demo ID quick fill, locked BRN input, cache purge)
 - ClassActionStates.test.tsx: 7/7 passed
 ```
 
@@ -130,26 +130,26 @@ Duration:   1.39s
 ```
 vite v6.4.6 building for production...
 ✓ 1728 modules transformed.
-dist/index.html                   0.56 kB
-dist/assets/index-B2sAxn6f.css   38.43 kB
-dist/assets/index-DZI_s-l8.js   476.84 kB
-✓ built in 2.04s (0 errors, 0 warnings)
+dist/index.html                   0.58 kB
+dist/assets/index-CXQ_iDeS.css   45.33 kB
+dist/assets/index-Cpl7dmE9.js   485.41 kB
+✓ built in 2.06s (0 errors, 0 warnings)
 ```
 
 ---
 
 ## 7. E2E Browser Verification & Evidence
 
-Headless Chrome automated verification was conducted via Chrome DevTools Protocol (`verify_phase5_e2e.py`). All 6 steps passed and generated visual proof in `e2e_evidence/`:
+Live Google Chrome automated and manual verification was conducted via Chrome DevTools Protocol against `http://localhost:3000` (including cross-device viewport verification from `260px` to `1280px`). All journeys passed and generated updated visual proof in `e2e_evidence/`:
 
 | Step | Test Description | Generated Artifact | Verified Assertion |
 |---|---|---|---|
-| **1** | Fresh visitor landing | `e2e_evidence/1_fresh_visitor_landing.png` | Top input empty, `localStorage` empty, action buttons show `"Enter BRN Above to Apply"`. |
-| **2** | Invalid BRN validation (< 17 digits) | Console verified | Header shows `5/17` digits warning, `localStorage` remains empty. |
-| **3** | Valid 17-digit BRN (Student A) | `e2e_evidence/2_student_a_identified.png` | Top input reflects `20152691234567890`, green `Valid` status, "Switch Student" button visible. |
-| **4** | Student switching modal | `e2e_evidence/3_switch_student_modal.png` | Switch confirmation modal rendered with accessible action buttons. |
-| **5** | Student B entry | `e2e_evidence/4_student_b_identified.png` | Clean switch to Student B (`20152699876543210`), previous cache cleared, new student active. |
-| **6** | Admin portal navigation | `e2e_evidence/5_admin_portal.png` | Admin dashboard accessible without login, capacity metrics and class table displayed. |
+| **1** | Fresh visitor landing | `e2e_evidence/1_fresh_visitor_landing.png` | Top input empty & enabled, `Submit ID` disabled, `Demo ID` helper visible, action buttons show `"Enter BRN Above to Apply"`. |
+| **2** | Invalid BRN validation (< 17 digits) | Console & UI verified | Header shows `X/17` progress, `Submit ID` stays disabled, `localStorage` remains empty (no premature auto-save). |
+| **3** | Valid 17-digit BRN + Submit ID (Student A) | `e2e_evidence/2_student_a_identified.png` | Top input reflects `20152691234567890` and locks (`disabled` with `Lock` icon & green `Active` badge), `"Switch Student"` button visible. |
+| **4** | Student switching modal | `e2e_evidence/3_switch_student_modal.png` | Switch confirmation modal rendered; confirming unlocks and clears `#top-brn-input`. |
+| **5** | Student B entry | `e2e_evidence/4_student_b_identified.png` | Clean switch to Student B, previous cache cleared, new student confirmed & locked via `Submit ID`. |
+| **6** | Admin portal navigation & class creation | `e2e_evidence/5_admin_portal.png` | Admin dashboard accessible without login, live class creation, capacity metrics, shift filters, and responsive table/cards verified (`260px`–`1280px`). |
 
 ---
 

@@ -84,9 +84,9 @@ This document details all technical and architectural assumptions made during th
 - **Specification Alignment:** Per the exact assignment instruction (*"Login লাগবে না। Page-এর উপরে একটা ঘরে শিক্ষার্থীর জন্ম নিবন্ধন নম্বর লেখা যাবে। UI এটাকেই শিক্ষার্থীর পরিচয় হিসেবে ধরে নেবে। API-তে শিক্ষার্থীর পরিচয় আসবে X-Student-Id header দিয়ে।"*):
   1. The 17-digit BRN input box is positioned directly and prominently at the top of the page (`#top-brn-input`) in the application header.
   2. A fresh visitor does NOT receive a hardcoded identity. The input starts blank, and the student or parent enters their 17-digit Birth Registration Number.
-  3. Real-time validation checks for exactly 17 numeric digits (`^\d{17}$`) and preserves leading zeros throughout.
-  4. Once a valid 17-digit BRN is entered, it is immediately recognized as the active student identifier, injected into every API request via the `X-Student-Id` header, and persisted in `localStorage`.
-  5. An explicit "Switch Student" button appears alongside the input. Clicking it prompts a confirmation dialog, clears the student identifier from storage, and purges the TanStack Query client cache (`queryClient.clear()`).
-  6. Database records, active holds, and admissions for the previous student remain intact on PostgreSQL, ensuring clean isolation when switching between applicants.
-  7. Hardcoded demo student preset buttons are omitted from the production interface to maintain pure assignment fidelity.
+  3. Real-time validation checks for 17 numeric digits (`^\d{17}$`) while preserving leading zeros, showing live progress (`X/17` or `Ready`).
+  4. Typing alone never triggers accidental auto-saves: an explicit **Submit ID** button (or pressing `Enter`) commits the 17-digit BRN as the active student identity, persists it to `localStorage`, and injects it into outgoing API requests via the `X-Student-Id` header.
+  5. For evaluator convenience without bypassing explicit submission, a **Demo ID** quick-fill helper populates `#top-brn-input` with valid 17-digit demo BRNs (`20152691234567890` / `20152699876543210`) while still requiring a manual click on **Submit ID**.
+  6. Once committed, `#top-brn-input` displays an `Active` lock indicator and becomes `disabled` so the active student's BRN cannot be accidentally edited mid-session without clearing cache.
+  7. Clicking the explicit **Switch Student** button opens a confirmation dialog; confirming clears the stored ID, unlocks/focuses `#top-brn-input`, and purges the TanStack Query client cache (`queryClient.clear()`), while database holds and admissions remain safely preserved in PostgreSQL.
   8. Class action buttons dynamically communicate the precise status: `Apply for Admission`, `Continue Application`, `Admission Confirmed`, `Already Admitted to Another Class`, `Application Already Active`, `No Seats Available`, and `Apply Again` (when eligible after expiration/cancellation).

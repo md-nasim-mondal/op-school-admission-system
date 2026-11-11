@@ -26,9 +26,9 @@ Automated end-to-end browser audits were executed against the live application u
 - **Student Identifier:** `20152690000000001` (17-digit BRN).
 - **Initial Context:** Fresh browser session without cached credentials.
 - **Verification Observations:**
-  1. Top-of-page BRN input (`#top-brn-input`) started completely empty; `localStorage` was null.
-  2. Entering Student A's BRN immediately turned the validation badge green (`Valid`) with 17 digits verified.
-  3. Network monitoring confirmed outgoing API requests carried header: `X-Student-Id: 20152690000000001`.
+  1. Top-of-page BRN input (`#top-brn-input`) started completely empty and enabled; `localStorage` was null.
+  2. Entering Student A's 17-digit BRN enabled the **Submit ID** button (`Ready` badge, without premature auto-saving); clicking **Submit ID** locked the input (`disabled` with `Lock` icon & green `Active` badge).
+  3. Network monitoring confirmed outgoing API requests carried header: `X-Student-Id: ...`.
   4. Class action buttons dynamically switched from *"Enter BRN Above to Apply"* to active state *"Apply for Admission"*.
   5. Applied for *"Class 6 - Day Shift"*: seat hold was acquired instantly via `POST /classes/{id}/holds` (`201 Created`).
   6. The `ActiveHoldCard` section rendered immediately with a live 10-minute countdown timer (`09:59`), class details, hold ID, and *"Pay Admission Fee (Confirm)"* button.
@@ -45,7 +45,7 @@ Automated end-to-end browser audits were executed against the live application u
 - **Verification Observations:**
   1. Student A's active session, confirmed admission banner, and cached hold cards immediately disappeared from the UI.
   2. Client-side `localStorage` was deleted and TanStack Query cache was purged (`queryClient.clear()`).
-  3. Entered Student B's identifier in `#top-brn-input`.
+  3. Entered Student B's identifier in `#top-brn-input` and clicked **Submit ID** (locking `#top-brn-input` cleanly).
   4. Outgoing requests were intercepted and confirmed to use `X-Student-Id: 20152690000000002`.
   5. Student B saw clean class listings and could not view any of Student A's application history or confirmed admission.
   6. Student B applied for *"Class 6 - Morning Shift"*: hold was created independently (`201 Created`).
@@ -138,11 +138,11 @@ Time:    3.49s
 ### 4.3 Frontend Automated Tests (Vitest)
 ```text
 Command: npm --prefix frontend test -- --run
-Status:  Test Files: 4 passed | Tests: 17 passed | Failed: 0
+Status:  Test Files: 4 passed | Tests: 19 passed | Failed: 0
 Time:    1.31s
 - Badge.test.tsx:                  4/4 PASSED
 - CountdownTimer.test.tsx:         2/2 PASSED
-- StudentIdentityWorkflow.test.tsx: 4/4 PASSED
+- StudentIdentityWorkflow.test.tsx: 6/6 PASSED (Submit ID, Demo ID, Locked Input, Switch Purge)
 - ClassActionStates.test.tsx:      7/7 PASSED
 ```
 
@@ -150,11 +150,11 @@ Time:    1.31s
 ```text
 Command: npm --prefix frontend run build
 Status:  tsc -b && vite build (Exit code 0)
-Time:    1.97s
+Time:    2.06s
 Outputs:
-- dist/index.html                  0.56 kB
-- dist/assets/index-B2sAxn6f.css  38.43 kB
-- dist/assets/index-DZI_s-l8.js  476.84 kB
+- dist/index.html                  0.58 kB
+- dist/assets/index-CXQ_iDeS.css  45.33 kB
+- dist/assets/index-Cpl7dmE9.js  485.41 kB
 ```
 
 ---
@@ -207,7 +207,7 @@ Outputs:
 | **REQ-26** | Real-time countdown timer without page reload | `CountdownTimer.tsx` | **PASS** |
 | **REQ-27** | Automated background seat polling (5-second refetch) | `useQuery` (`refetchInterval: 5000`) | **PASS** |
 | **REQ-28** | Refresh resilience (reloads restore state from backend) | `StudentContext.tsx`, `StudentPortalPage.tsx` | **PASS** |
-| **REQ-29** | Automated tests (Unit + 100-request high concurrency test) | 32 Backend + 17 Frontend = 49 tests | **PASS** |
+| **REQ-29** | Automated tests (Unit + 100-request high concurrency test) | 32 Backend + 19 Frontend = 51 tests | **PASS** |
 | **REQ-30** | Multi-class cross-booking prevention (advisory locks) | `AdmissionService.cs`, xUnit test | **PASS** |
 | **REQ-31** | Database persistence across container restarts | Named volume `pg_data` | **PASS** |
 | **REQ-32** | Required documentation (`README`, `ASSUMPTIONS`, `AI_USAGE`) | Root repository files | **PASS** |

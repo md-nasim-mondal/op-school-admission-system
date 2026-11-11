@@ -63,9 +63,10 @@ school-admission-system/
 ├── AI_USAGE.md                             # Record of AI tool usage, corrections, and verifications
 ├── FINAL_ASSIGNMENT_COMPLIANCE_REPORT.md   # Phase 5 strict compliance audit report
 ├── FINAL_RELEASE_READINESS_REPORT.md       # Phase 6 release readiness report
-├── e2e_evidence/                           # 9 Automated CDP headless browser screenshots
+├── e2e_evidence/                           # 9 Live Chrome CDP E2E screenshots (verified across UI states)
 │
 ├── backend/
+│   ├── .env.example                        # Example environment configuration for local .NET dev
 │   ├── SchoolAdmission.sln
 │   ├── Dockerfile                          # Multi-stage production Dockerfile (.NET 8)
 │   ├── src/
@@ -78,6 +79,7 @@ school-admission-system/
 │       └── SchoolAdmission.IntegrationTests/ # 13 Integration tests (concurrency, race conditions, workflows)
 │
 └── frontend/
+    ├── .env.example                        # Example Vite API base URL config for local dev
     ├── Dockerfile                          # Multi-stage production Dockerfile (Nginx)
     ├── nginx.conf                          # SPA routing fallback configuration
     ├── package.json
@@ -392,14 +394,16 @@ npm --prefix frontend run build
 - [x] Live countdown timer and automated polling (every 5s) on the frontend.
 - [x] Top-of-page 17-digit BRN input box (`#top-brn-input`) per exact Bengali assignment wording:
   *"Login লাগবে না। Page-এর উপরে একটা ঘরে শিক্ষার্থীর জন্ম নিবন্ধন নম্বর লেখা যাবে। UI এটাকেই শিক্ষার্থীর পরিচয় হিসেবে ধরে নেবে। API-তে শিক্ষার্থীর পরিচয় আসবে X-Student-Id header দিয়ে।"*
+- [x] Explicit **Submit ID** confirmation + non-auto-saving **Demo ID** quick-fill helper + **locked (`disabled`) BRN input** once committed until **Switch Student** is clicked (preventing accidental mid-session edits).
+- [x] Fully responsive layout verified in Google Chrome across **260px ultra-narrow mobile, 320px, 375px, 768px tablet, and 1280px+ desktop** (0 horizontal overflows; `@container`-driven responsive stacked table cards on narrow screens).
 - [x] Clean student switching with confirmation modal and client query cache purging (`queryClient.clear()`), with full server-side PostgreSQL hold preservation.
 - [x] Admin Demonstration Portal (`/admin`) for class creation, shift filtering (`All Shifts`, `Morning Shift`, `Day Shift`), and capacity monitoring without authentication.
-- [x] All 8 mandatory REST API endpoints verified against original contracts.
-- [x] Complete documentation and test evidence tracked:
-  - `README.md`: Complete system architecture and quick start guide
+- [x] All 8 mandatory REST API endpoints verified against original contracts (plus manual Swagger OpenAPI `3.0.1` UI verification).
+- [x] Complete documentation, 51 automated tests (32 Backend + 19 Frontend), and live Chrome E2E verification evidence tracked:
+  - `README.md`: Complete system architecture, Docker Compose, and local development run guide
   - `ASSUMPTIONS.md`: 10 core engineering and domain decisions
-  - `AI_USAGE.md`: Full record of AI pair-programming assistance and critical human corrections
+  - `AI_USAGE.md`: Full record of AI pair-programming assistance, human manual QA discoveries, and critical corrections
   - `REQUIREMENT_TRACEABILITY.md`: 32-item assignment requirement traceability matrix
-  - `FINAL_ASSIGNMENT_COMPLIANCE_REPORT.md`: Phase 5 compliance audit report
+  - `FINAL_ASSIGNMENT_COMPLIANCE_REPORT.md`: Phase 5 strict compliance audit report
   - `FINAL_RELEASE_READINESS_REPORT.md`: Phase 6 release readiness report
-  - `e2e_evidence/`: 9 Chrome DevTools Protocol browser verification screenshots
+  - `e2e_evidence/`: 9 live Chrome DevTools Protocol browser verification screenshots
