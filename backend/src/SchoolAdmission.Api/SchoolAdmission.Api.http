@@ -1,6 +1,36 @@
-@SchoolAdmission.Api_HostAddress = http://localhost:5122
+@baseUrl = http://localhost:8080
 
-GET {{SchoolAdmission.Api_HostAddress}}/weatherforecast/
+### Health Check Probe
+GET {{baseUrl}}/health
 Accept: application/json
 
 ###
+
+### Get All Classes
+GET {{baseUrl}}/classes
+Accept: application/json
+
+###
+
+### Create Class (Admin)
+POST {{baseUrl}}/classes
+Content-Type: application/json
+
+{
+  "name": "Class 10 - Science",
+  "totalSeats": 30
+}
+
+###
+
+### Create Seat Hold (Student)
+POST {{baseUrl}}/classes/c_11f483a4/holds
+Content-Type: application/json
+X-Student-Id: 20081234567890123
+
+###
+
+### Get Student Application History
+GET {{baseUrl}}/me/holds
+Accept: application/json
+X-Student-Id: 20081234567890123
